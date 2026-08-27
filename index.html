@@ -451,6 +451,7 @@
 var LS={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 var $=function(id){return document.getElementById(id)};
 var DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+var DIASL=["lunes","martes","miércoles","jueves","viernes","sábados","domingos"];
 var ABR={"Empujes":"Emp","Pierna":"Pier","Tracciones":"Trac","Torso":"Torso","Pierna y core":"Pier","Pecho y tríceps":"Pec+Tri","Espalda y bíceps":"Esp+Bi","Hombro y core":"Hom","Pecho":"Pecho","Espalda":"Esp","Brazos":"Brazos","Pierna y gemelo":"Pier2","Descarga":"Desc","Carga":"Carga","Normal":"Norm","Libre":"Libre","Bajo en carbo":"Bajo"};
 
 /* ============ TABLA DE ALIMENTOS ============
@@ -873,11 +874,31 @@ function saveP(){LS.set("pf4_profile",JSON.stringify(P))}
 function optKey(b,tk,mi){return b+"|"+tk+"|"+mi}
 function getOpt(b,tk,mi){var v=OPTS[optKey(b,tk,mi)];return v===undefined?0:v}
 function setOpt(b,tk,mi,v){OPTS[optKey(b,tk,mi)]=v;LS.set("pf4_opts",JSON.stringify(OPTS))}
-/* opción efectiva de un día concreto: si ese día tiene una elección propia, gana */
+/* Preferencia por día de la semana (los lunes siempre pollo, etc.) */
+var OPTWD={};(function(){var r=LS.get("pf5_optwd");if(r){try{OPTWD=JSON.parse(r)}catch(e){OPTWD={}}}})();
+function wdKey(b,wd,mi){return b+"|"+wd+"|"+mi}
+function getOptWd(b,wd,mi){var v=OPTWD[wdKey(b,wd,mi)];return v==null?null:v}
+function setOptWd(b,wd,mi,v){OPTWD[wdKey(b,wd,mi)]=v;LS.set("pf5_optwd",JSON.stringify(OPTWD))}
+function quitaOptWd(b,wd,mi){delete OPTWD[wdKey(b,wd,mi)];LS.set("pf5_optwd",JSON.stringify(OPTWD))}
+
+/* Jerarquía: excepción de ESE día > costumbre de ese día de la semana > opción del bloque */
 function optDia(k,b,tk,mi){
   var r=DAILY[k];
   if(r&&r.opts&&r.opts[mi]!=null)return r.opts[mi];
+  var w=getOptWd(b,wdOf(k),mi);
+  if(w!=null)return w;
   return getOpt(b,tk,mi);
+}
+/* Para la compra: costumbre semanal, sin excepciones puntuales */
+function optSemana(b,wd,tk,mi){
+  var w=getOptWd(b,wd,mi);
+  return w!=null?w:getOpt(b,tk,mi);
+}
+function origenOpt(k,b,tk,mi){
+  var r=DAILY[k];
+  if(r&&r.opts&&r.opts[mi]!=null)return "dia";
+  if(getOptWd(b,wdOf(k),mi)!=null)return "semanal";
+  return "bloque";
 }
 function setOptDia(k,mi,v){var r=rec(k);r.opts=r.opts||{};r.opts[mi]=v;saveDaily()}
 function quitaOptDia(k,mi){var r=rec(k);if(r.opts){delete r.opts[mi];saveDaily()}}
@@ -1236,7 +1257,7 @@ function renderBasket(){
   var dias=diasDeTanda();
   for(var di=0;di<dias.length;di++){var wd=dias[di],dg=diaDeSemana(wd),tk=dg.tipo.k;
     dg.comidas.forEach(function(m,mi){if(m.libre)return;
-      var o=m.o[getOpt(b,tk,mi)]||m.o[0];
+      var o=m.o[optSemana(b,wd,tk,mi)]||m.o[0];
       o.i.forEach(function(p){tot[p[0]]=(tot[p[0]]||0)+p[1]*f})})}
   ULTIMA_CESTA=tot;
   var sec={};
@@ -1536,7 +1557,7 @@ $("c-save").addEventListener("click",function(){
 
 /* ============ COPIA DE SEGURIDAD ============ */
 function backupObj(){return{v:4,fecha:new Date().toISOString(),
-  profile:P,opts:OPTS,logs:LOGS,hist:HIST,imports:IMPORTS,daily:DAILY,compra:checked,prices:PRICES,subs:SUBS}}
+  profile:P,opts:OPTS,logs:LOGS,hist:HIST,imports:IMPORTS,daily:DAILY,compra:checked,prices:PRICES,subs:SUBS,optwd:OPTWD}}
 function backupStr(){return JSON.stringify(backupObj())}
 $("bk-copy").addEventListener("click",function(){
   var t=backupStr();
@@ -1571,6 +1592,7 @@ $("bk-restore").addEventListener("click",function(){
   if(d.compra){checked=d.compra;LS.set("pf4_compra",JSON.stringify(checked))}
   if(d.prices){PRICES=d.prices;savePrices()}
   if(d.subs){SUBS=d.subs;saveSubs()}
+  if(d.optwd){OPTWD=d.optwd;LS.set("pf5_optwd",JSON.stringify(OPTWD))}
   $("bk-in").value="";fillP();renderAll();renderHist();
   $("bk-out").innerHTML='<div class="insight" style="margin-top:10px"><b>Restaurado.</b> Datos de la copia del '+((d.fecha||"").slice(0,10)||"?")+'.</div>';
 });
@@ -1655,8 +1677,8 @@ function renderSemana(){
         : '<div style="font-size:13.5px;margin-bottom:8px;color:var(--muted)">🚶 Sin gimnasio · '+pasosObjetivo().toLocaleString("es-ES")+' pasos</div>';
       inf.dg.comidas.forEach(function(m,mi){
         if(m.libre){h+='<div style="font-size:12.5px;color:var(--plum)">· '+m.n+': libre</div>';return}
-        var o=m.o[optDia(k,inf.bloque,inf.tipo.k,mi)]||m.o[0];
-        h+='<div style="font-size:12.5px;color:var(--muted)">· '+m.n+': <span style="color:var(--ink)">'+o.n+'</span>'+(tieneOptDia(k,mi)?' <span style="color:var(--iron)">★</span>':'')+' ('+o.m+', '+o.k+' kcal)</div>';
+        var o=m.o[optDia(k,inf.bloque,inf.tipo.k,mi)]||m.o[0],org=origenOpt(k,inf.bloque,inf.tipo.k,mi);
+        h+='<div style="font-size:12.5px;color:var(--muted)">· '+m.n+': <span style="color:var(--ink)">'+o.n+'</span>'+(org==="dia"?' <span style="color:var(--iron)">★</span>':org==="semanal"?' <span style="color:var(--sky)">↻</span>':'')+' ('+o.m+', '+o.k+' kcal)</div>';
       });
     }
     h+='</div></div>';
@@ -1684,36 +1706,50 @@ function renderDetalleDia(){
   h+='<div style="font:600 10px var(--mono);text-transform:uppercase;color:var(--faint);margin-bottom:6px">Día '+inf.tipo.n+' · '+inf.kcal+' kcal</div>';
   inf.dg.comidas.forEach(function(m,mi){
     if(m.libre){h+='<div class="pr"><span class="nm">'+m.n+'</span><span class="v" style="color:var(--plum)">libre</span></div>';return}
-    var o=m.o[optDia(CAL_SEL,inf.bloque,inf.tipo.k,mi)]||m.o[0];
-    h+='<div class="pr"><span class="nm">'+m.n+'<br><span style="font-size:11.5px;color:var(--faint)">'+o.n+' · '+o.m+(tieneOptDia(CAL_SEL,mi)?' <span style="color:var(--iron)">★ solo este día</span>':'')+'</span></span>'+
-      '<span><span class="v">'+o.k+'</span> <button type="button" class="cmd" data-m="'+mi+'" data-b="'+inf.bloque+'" data-t="'+inf.tipo.k+'" data-ti="'+inf.ti+'" style="background:var(--panel2);border:1px solid var(--line);color:var(--ink);font:700 11px var(--sans);padding:6px 9px;border-radius:8px;cursor:pointer;margin-left:6px">⇄</button></span></div>';
+    var o=m.o[optDia(CAL_SEL,inf.bloque,inf.tipo.k,mi)]||m.o[0],org=origenOpt(CAL_SEL,inf.bloque,inf.tipo.k,mi);
+    var etq=org==="dia"?'<span style="color:var(--iron)"> ★ solo este día</span>':org==="semanal"?'<span style="color:var(--sky)"> ↻ todos los '+DIASL[inf.wd]+'</span>':'';
+    h+='<div style="padding:11px 0;border-bottom:1px solid rgba(44,51,62,.5)">'+
+      '<div style="display:flex;align-items:flex-start;gap:10px">'+
+        '<div style="flex:1"><div style="font-size:14px;font-weight:700">'+m.n+' · <span style="color:var(--fresh)">'+o.n+'</span></div>'+
+        '<div style="font:600 10px var(--mono);text-transform:uppercase;color:var(--faint);margin-top:2px">'+o.m+etq+'</div>'+
+        '<div style="font-size:12.5px;color:var(--muted);margin-top:5px">'+o.t+'</div></div>'+
+        '<div style="text-align:right;flex:0 0 auto"><div class="v" style="font:700 13px var(--mono);color:var(--iron)">'+o.k+'</div>'+
+        '<button type="button" class="cmd" data-m="'+mi+'" data-b="'+inf.bloque+'" data-t="'+inf.tipo.k+'" data-ti="'+inf.ti+'" data-wd="'+inf.wd+'" style="background:var(--panel2);border:1px solid var(--line);color:var(--ink);font:700 11px var(--sans);padding:6px 9px;border-radius:8px;cursor:pointer;margin-top:6px">⇄</button></div>'+
+      '</div></div>';
   });
   if(esOtro)h+='<p class="lead" style="margin:12px 0 0;font-size:12.5px">Así te quedará la comida en ese bloque. Para cambiar las opciones, selecciona ese bloque en ⚙️ y ve a Comida.</p>';
   h+='</div></div>';
   $("cal-detalle").innerHTML=h;
   Array.prototype.forEach.call($("cal-detalle").querySelectorAll("button.cmd"),function(bt){
     bt.addEventListener("click",function(){
-      abreOpcionFecha(CAL_SEL,parseInt(bt.getAttribute("data-b"),10),parseInt(bt.getAttribute("data-ti"),10),parseInt(bt.getAttribute("data-m"),10))})});
+      abreOpcionFecha(CAL_SEL,parseInt(bt.getAttribute("data-b"),10),parseInt(bt.getAttribute("data-ti"),10),parseInt(bt.getAttribute("data-m"),10),parseInt(bt.getAttribute("data-wd"),10))})});
 }
-function abreOpcionFecha(k,b,ti,mi){
+function abreOpcionFecha(k,b,ti,mi,wd){
   var dg=diaGen(b,ti),tp=dg.tipo,m=dg.comidas[mi],sel=optDia(k,b,tp.k,mi);
   var f=k.split("-").reverse().join("/");
   $("p-title").innerHTML="⇄ "+m.n+" · "+f;
-  var h='<p class="lead">Elige qué vas a comer <b>ese día concreto</b>. Si no tocas nada, se usa tu opción habitual del bloque.</p>';
+  var h='<p class="lead">Elige la comida y luego decide si es <b>solo por hoy</b> o tu <b>costumbre de los '+DIASL[wd]+'</b>.</p>';
   m.o.forEach(function(o,oi){
     h+='<label class="opt"><input type="radio" name="opcf"'+(oi===sel?" checked":"")+' data-o="'+oi+'">'+
       '<span class="ot"><b>'+o.n+'</b> <span style="font:600 9.5px var(--mono);color:var(--faint);border:1px solid var(--line);padding:2px 6px;border-radius:20px">'+o.m+'</span>'+
-      '<br><span style="color:var(--muted);font-size:12.5px">'+o.t+'</span></span><span class="ok">'+o.k+'</span></label>';
+      '<br><span style="color:var(--muted);font-size:12.5px">'+o.t+'</span>'+
+      '<br><span style="font:600 10.5px var(--mono);color:var(--faint)">P'+o.mac[0]+' · C'+o.mac[1]+' · G'+o.mac[2]+'</span></span><span class="ok">'+o.k+'</span></label>';
   });
-  h+='<button class="btn primary full" id="opcf-save" style="margin-top:14px">Fijar solo para este día</button>'+
-     '<button class="btn full" id="opcf-todos" style="margin-top:10px">Usarla en todos los días '+tp.n.toLowerCase()+' del bloque</button>';
-  if(tieneOptDia(k,mi))h+='<button class="btn full" id="opcf-quita" style="margin-top:10px">Quitar la excepción de este día</button>';
+  h+='<div style="margin-top:16px;font:600 10px var(--mono);text-transform:uppercase;color:var(--faint);margin-bottom:8px">¿Para cuándo?</div>'+
+     '<button class="btn iron full" id="opcf-wd">↻ Todos los '+DIASL[wd]+' (mi costumbre)</button>'+
+     '<button class="btn full" id="opcf-save" style="margin-top:10px">★ Solo este día</button>'+
+     '<button class="btn full" id="opcf-todos" style="margin-top:10px">Todos los días '+tp.n.toLowerCase()+' del bloque</button>';
+  var org=origenOpt(k,b,tp.k,mi);
+  if(org!=="bloque")h+='<button class="btn full" id="opcf-quita" style="margin-top:10px">Quitar '+(org==="dia"?"la excepción de este día":"la costumbre de los "+DIASL[wd])+'</button>';
   $("p-body").innerHTML=h;
   function elegida(){var r=$("p-body").querySelector("input[name=opcf]:checked");return r?parseInt(r.getAttribute("data-o"),10):sel}
-  $("opcf-save").addEventListener("click",function(){setOptDia(k,mi,elegida());cierra()});
-  $("opcf-todos").addEventListener("click",function(){setOpt(b,tp.k,mi,elegida());quitaOptDia(k,mi);cierra()});
-  if($("opcf-quita"))$("opcf-quita").addEventListener("click",function(){quitaOptDia(k,mi);cierra()});
   function cierra(){$("pmodal").classList.remove("on");renderCalendario();renderHoy();renderComida();renderBasket()}
+  $("opcf-wd").addEventListener("click",function(){setOptWd(b,wd,mi,elegida());quitaOptDia(k,mi);cierra()});
+  $("opcf-save").addEventListener("click",function(){setOptDia(k,mi,elegida());cierra()});
+  $("opcf-todos").addEventListener("click",function(){setOpt(b,tp.k,mi,elegida());quitaOptWd(b,wd,mi);quitaOptDia(k,mi);cierra()});
+  if($("opcf-quita"))$("opcf-quita").addEventListener("click",function(){
+    if(org==="dia")quitaOptDia(k,mi); else quitaOptWd(b,wd,mi);
+    cierra()});
   $("pmodal").classList.add("on");
 }
 function navega(dir){

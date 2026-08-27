@@ -1,4 +1,4 @@
-const CACHE = 'planfit-v12';
+const CACHE = 'planfit-v13';
 const ASSETS = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', e => {
