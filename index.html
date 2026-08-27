@@ -451,7 +451,7 @@
 var LS={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 var $=function(id){return document.getElementById(id)};
 var DIAS=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
-var ABR={"Empujes":"Emp","Pierna":"Pier","Tracciones":"Trac","Descarga":"Desc","Carga":"Carga","Normal":"Norm","Libre":"Libre","Bajo en carbo":"Bajo"};
+var ABR={"Empujes":"Emp","Pierna":"Pier","Tracciones":"Trac","Torso":"Torso","Pierna y core":"Pier","Pecho y tríceps":"Pec+Tri","Espalda y bíceps":"Esp+Bi","Hombro y core":"Hom","Pecho":"Pecho","Espalda":"Esp","Brazos":"Brazos","Pierna y gemelo":"Pier2","Descarga":"Desc","Carga":"Carga","Normal":"Norm","Libre":"Libre","Bajo en carbo":"Bajo"};
 
 /* ============ TABLA DE ALIMENTOS ============
    [kcal, P, C, G] por unidad, luego: unidad, sección de compra, nombre en la lista, nombre en receta */
@@ -737,21 +737,124 @@ function cardioTexto(){
   return "10.000 pasos al día o 30-40' de cardio suave";
 }
 
-/* ============ ENTRENOS ============ */
-var BLOQUES=[
- {n:"Bloque 1",wk:"Semanas 1-4",ses:[
-  {n:"Empujes",sub:"Pectoral · Hombro · Tríceps",ex:[["PRESS BANCA PLANO",4,"8-12",2],["PRESS MILITAR CON MANCUERNAS",4,"8-12",2],["CRUCES DE POLEA",4,"15-20",2],["EXTENSIÓN TRÍCEPS EN POLEA ALTA",3,"15",2]]},
-  {n:"Pierna",sub:"Cuádriceps · Femoral · Gemelo",ex:[["ADDUCTOR EN MÁQUINA",3,"15",2],["SENTADILLA LIBRE",4,"8-10",2],["CURL FEMORAL EN MÁQUINA",4,"10",2],["EXTENSIÓN DE CUÁDRICEPS",4,"10",2],["PESO MUERTO CON MANCUERNAS",4,"8-10",2]]},
-  {n:"Tracciones",sub:"Espalda · Bíceps",ex:[["JALÓN AL PECHO",4,"10",2],["REMO GIRONDA",4,"12",2],["REMO UNILATERAL MANCUERNA",4,"8-10",2],["CURL BÍCEPS POLEA BAJA",3,"12",2],["CIRCUITO ABS",3,"—",null]]}]},
- {n:"Bloque 2",wk:"Semanas 5-8",ses:[
-  {n:"Empujes",sub:"Pectoral · Hombro · Tríceps",ex:[["PRESS BANCA INCLINADO MANCUERNAS",4,"8-12",2],["PRESS MILITAR CON MANCUERNAS",4,"10",2],["FONDOS EN PARALELAS",4,"15-20",1],["ELEVACIONES LATERALES",3,"12",1],["EXTENSIÓN TRÍCEPS EN POLEA ALTA",3,"15",1]]},
-  {n:"Pierna",sub:"Cuádriceps · Femoral · Gemelo",ex:[["PRENSA",4,"10-12",2],["CURL FEMORAL EN MÁQUINA",4,"10",1],["SENTADILLA SUMO",4,"12",2],["EXTENSIÓN DE CUÁDRICEPS",4,"10",1],["PESO MUERTO MANCUERNAS 1 PIERNA",3,"6-8",2]]},
-  {n:"Tracciones",sub:"Espalda · Bíceps",ex:[["REMO EN PUNTA (REMO EN T)",4,"10-12",2],["DOMINADAS",3,"6-8",2],["REMO UNILATERAL MANCUERNA",4,"8-10",1],["JALÓN AL PECHO",4,"12",1],["CURL BÍCEPS SENTADO 45º",3,"8-10",1],["CIRCUITO ABS",3,"—",null]]}]},
- {n:"Bloque 3",wk:"Semanas 9-12",ses:[
-  {n:"Empujes",sub:"Pectoral · Hombro · Tríceps",ex:[["PRESS BANCA PLANO",4,"8-12",2],["PRESS MILITAR CON MANCUERNAS",4,"10",2],["PEC FLY / MÁQUINA CONTRACTORA",4,"12",1],["ELEVACIONES LATERALES",4,"12",1],["EXTENSIÓN TRÍCEPS POLEA ALTA UNILATERAL",3,"12",1]]},
-  {n:"Pierna",sub:"Cuádriceps · Femoral · Gemelo",ex:[["ADDUCTOR EN MÁQUINA",3,"12",2],["PESO MUERTO",4,"10-12",2],["SENTADILLA BÚLGARA EN MULTIPOWER",4,"12",2],["CURL FEMORAL EN MÁQUINA 1 PIERNA",4,"8",1],["EXTENSIÓN DE CUÁDRICEPS",4,"12",1],["GEMELOS DE PIE (SMITH)",3,"20",1]]},
-  {n:"Tracciones",sub:"Espalda · Bíceps",ex:[["REMO EN T",4,"10-12",2],["JALÓN AL PECHO",4,"12",2],["REMO UNILATERAL MANCUERNA",4,"8-10",1],["CURL BÍCEPS SENTADO 45º",4,"15",1],["CURL BÍCEPS CON BARRA Z (21)",3,"21",1],["CIRCUITO ABS",3,"—",null]]}]}
+/* ============ ENTRENOS ============
+   Banco de ejercicios por bloque, cada uno con su grupo muscular.
+   Las sesiones se COMPONEN según los días que entrenes a la semana. */
+var POOL=[
+ {n:"Bloque 1",wk:"Semanas 1-4",ex:[
+  ["PRESS BANCA PLANO",4,"8-12",2,"pecho"],
+  ["PRESS INCLINADO CON MANCUERNAS",3,"10-12",2,"pecho"],
+  ["CRUCES DE POLEA",4,"15-20",2,"pecho"],
+  ["PRESS MILITAR CON MANCUERNAS",4,"8-12",2,"hombro"],
+  ["ELEVACIONES LATERALES",3,"15",1,"hombro"],
+  ["EXTENSIÓN TRICEPS EN POLEA ALTA",3,"15",2,"triceps"],
+  ["FONDOS EN BANCO",3,"12",1,"triceps"],
+  ["SENTADILLA LIBRE",4,"8-10",2,"cuadriceps"],
+  ["PRENSA",3,"12",2,"cuadriceps"],
+  ["EXTENSION DE CUADRICEPS",4,"10",2,"cuadriceps"],
+  ["PESO MUERTO CON MANCUERNAS",4,"8-10",2,"femoral"],
+  ["CURL FEMORAL EN MAQUINA (sentado, tumbado)",4,"10",2,"femoral"],
+  ["ADDUCTOR EN MAQUINA",3,"15",2,"femoral"],
+  ["GEMELOS DE PIES (SMITH)",3,"20",1,"gemelo"],
+  ["JALON AL PECHO",4,"10",2,"espalda"],
+  ["REMO GIRONDA",4,"12",2,"espalda"],
+  ["REMO UNILATERAL MANCUERNA",4,"8-10",2,"espalda"],
+  ["CURL BICEPS POLEA BAJA",3,"12",2,"biceps"],
+  ["CURL MARTILLO",3,"12",1,"biceps"],
+  ["CIRCUITO ABS",3,"—",null,"core"]]},
+ {n:"Bloque 2",wk:"Semanas 5-8",ex:[
+  ["PRESS BANCA INCLINADO MANCUERNAS",4,"8-12",2,"pecho"],
+  ["PEC FLY o MÁQUINA CONTRACTORA",3,"12",1,"pecho"],
+  ["CRUCES DE POLEA",3,"15",1,"pecho"],
+  ["PRESS MILITAR CON MANCUERNAS",4,"10",2,"hombro"],
+  ["ELEVACIONES LATERALES",3,"12",1,"hombro"],
+  ["FONDOS EN PARALELAS",4,"15-20",1,"triceps"],
+  ["EXTENSIÓN TRICEPS EN POLEA ALTA",3,"15",1,"triceps"],
+  ["PRENSA",4,"10-12",2,"cuadriceps"],
+  ["SENTADILLA SUMO",4,"12",2,"cuadriceps"],
+  ["EXTENSION DE CUADRICEPS",4,"10",1,"cuadriceps"],
+  ["CURL FEMORAL EN MAQUINA (sentado, tumbado)",4,"10",1,"femoral"],
+  ["PESO MUERTO MANCUERNAS 1 PIERNA",3,"6-8",2,"femoral"],
+  ["GEMELOS DE PIES (SMITH)",3,"20",1,"gemelo"],
+  ["REMO EN PUNTA (REMO EN T)",4,"10-12",2,"espalda"],
+  ["DOMINADAS",3,"6-8",2,"espalda"],
+  ["REMO UNILATERAL MANCUERNA",4,"8-10",1,"espalda"],
+  ["JALON AL PECHO",4,"12",1,"espalda"],
+  ["CURL BICEPS SENTADO 45º",3,"8-10",1,"biceps"],
+  ["CURL MARTILLO",3,"12",1,"biceps"],
+  ["CIRCUITO ABS",3,"—",null,"core"]]},
+ {n:"Bloque 3",wk:"Semanas 9-12",ex:[
+  ["PRESS BANCA PLANO",4,"8-12",2,"pecho"],
+  ["PEC FLY o MÁQUINA CONTRACTORA",4,"12",1,"pecho"],
+  ["PRESS INCLINADO CON MANCUERNAS",3,"10",2,"pecho"],
+  ["PRESS MILITAR CON MANCUERNAS",4,"10",2,"hombro"],
+  ["ELEVACIONES LATERALES",4,"12",1,"hombro"],
+  ["EXTENSIÓN TRICEPS EN POLEA ALTA UNILATERAL",3,"12",1,"triceps"],
+  ["FONDOS EN BANCO",3,"12",1,"triceps"],
+  ["SENTADILLA BULGARA EN MULTIPOWER",4,"12",2,"cuadriceps"],
+  ["EXTENSION DE CUADRICEPS",4,"12",1,"cuadriceps"],
+  ["PRENSA",3,"12",2,"cuadriceps"],
+  ["PESO MUERTO",4,"10-12",2,"femoral"],
+  ["CURL FEMORAL EN MAQUINA 1 PIERNA",4,"8",1,"femoral"],
+  ["ADDUCTOR EN MAQUINA",3,"12",2,"femoral"],
+  ["GEMELOS DE PIES (SMITH)",3,"20",1,"gemelo"],
+  ["REMO EN T",4,"10-12",2,"espalda"],
+  ["JALON AL PECHO",4,"12",2,"espalda"],
+  ["REMO UNILATERAL MANCUERNA",4,"8-10",1,"espalda"],
+  ["CURL BICEPS SENTADO 45º",4,"15",1,"biceps"],
+  ["CURL BICEPS CON BARRA Z (21)",3,"21",1,"biceps"],
+  ["CIRCUITO ABS",3,"—",null,"core"]]}
 ];
+/* Cómo se reparten los grupos según los días que entrenes */
+var SPLITS={
+ 2:[["Torso","Pecho · Espalda · Hombro · Brazos",["pecho","espalda","hombro","biceps","triceps"]],
+    ["Pierna y core","Tren inferior completo",["cuadriceps","femoral","gemelo","core"]]],
+ 3:[["Empujes","Pectoral · Hombro · Tríceps",["pecho","hombro","triceps"]],
+    ["Pierna","Cuádriceps · Femoral · Gemelo",["cuadriceps","femoral","gemelo"]],
+    ["Tracciones","Espalda · Bíceps · Core",["espalda","biceps","core"]]],
+ 4:[["Pecho y tríceps","Pectoral y tríceps",["pecho","triceps"]],
+    ["Espalda y bíceps","Dorsal y bíceps",["espalda","biceps"]],
+    ["Pierna","Tren inferior completo",["cuadriceps","femoral","gemelo"]],
+    ["Hombro y core","Deltoides y abdomen",["hombro","core"]]],
+ 5:[["Pecho","Pectoral",["pecho"]],
+    ["Espalda","Dorsal y trapecio",["espalda"]],
+    ["Pierna","Tren inferior completo",["cuadriceps","femoral","gemelo"]],
+    ["Hombro y core","Deltoides y abdomen",["hombro","core"]],
+    ["Brazos","Bíceps y tríceps",["biceps","triceps"]]],
+ 6:[["Pecho y tríceps","Pectoral y tríceps",["pecho","triceps"]],
+    ["Espalda y bíceps","Dorsal y bíceps",["espalda","biceps"]],
+    ["Pierna","Cuádriceps y femoral",["cuadriceps","femoral"]],
+    ["Hombro y core","Deltoides y abdomen",["hombro","core"]],
+    ["Brazos","Bíceps y tríceps",["biceps","triceps"]],
+    ["Pierna y gemelo","Femoral y gemelo",["femoral","gemelo"]]]
+};
+var _sesCache={};
+function nDias(){var n=trainDays().length;return Math.max(2,Math.min(6,n||3))}
+function sesionesDe(b){
+  var k=b+"_"+nDias();
+  if(_sesCache[k])return _sesCache[k];
+  var plan=SPLITS[nDias()]||SPLITS[3],pool=POOL[b].ex;
+  var cap=nDias()<=2?8:nDias()>=5?5:6;
+  var res=plan.map(function(p){
+    // agrupa por músculo y reparte por rondas, para que ningún grupo se quede fuera
+    var porGrupo={};
+    p[2].forEach(function(g){porGrupo[g]=pool.filter(function(e){return e[4]===g})});
+    var ex=[],ronda=0,quedan=true;
+    while(ex.length<cap&&quedan){
+      quedan=false;
+      for(var i=0;i<p[2].length&&ex.length<cap;i++){
+        var lista=porGrupo[p[2][i]]||[];
+        if(lista[ronda]){ex.push(lista[ronda]);quedan=true}
+      }
+      ronda++;
+    }
+    return{n:p[0],sub:p[1],ex:ex.map(function(e){return [e[0],e[1],e[2],e[3]]})};
+  });
+  _sesCache[k]=res;return res;
+}
+function sesionesActuales(){return sesionesDe(P.bloque)}
+/* compatibilidad: BLOQUES sigue existiendo con nombre y semanas */
+var BLOQUES=POOL.map(function(x){return{n:x.n,wk:x.wk}});
 var NOTAS=["Los pesos siempre son en crudo","Sal del Himalaya o marina en todas las comidas","Evitar el azúcar; si acaso, edulcorantes","Beber 3 litros de agua diarios","Una comida libre a la semana","Salsas 0% (ketchup, BBQ…)","Bebidas 0% (2-3 al día máximo)","Verdura libre (las que quieras, máx 400g · ¡no aguacate!)","Ensalada completa (tomate, cebolla, lechuga…)","Patata cocida, al horno o airfryer","AOVE lo justo y necesario","En ayunas: 500ml de agua + 2g de sal marina o rosa + 1 limón exprimido","Aprovechar los descansos entre series para sumar pasos"];
 
 /* ============ ESTADO ============ */
@@ -770,9 +873,18 @@ function saveP(){LS.set("pf4_profile",JSON.stringify(P))}
 function optKey(b,tk,mi){return b+"|"+tk+"|"+mi}
 function getOpt(b,tk,mi){var v=OPTS[optKey(b,tk,mi)];return v===undefined?0:v}
 function setOpt(b,tk,mi,v){OPTS[optKey(b,tk,mi)]=v;LS.set("pf4_opts",JSON.stringify(OPTS))}
+/* opción efectiva de un día concreto: si ese día tiene una elección propia, gana */
+function optDia(k,b,tk,mi){
+  var r=DAILY[k];
+  if(r&&r.opts&&r.opts[mi]!=null)return r.opts[mi];
+  return getOpt(b,tk,mi);
+}
+function setOptDia(k,mi,v){var r=rec(k);r.opts=r.opts||{};r.opts[mi]=v;saveDaily()}
+function quitaOptDia(k,mi){var r=rec(k);if(r.opts){delete r.opts[mi];saveDaily()}}
+function tieneOptDia(k,mi){var r=DAILY[k];return !!(r&&r.opts&&r.opts[mi]!=null)}
 function bloque(){return BLOQUES[P.bloque]}
 var _cache={};
-function limpiaCache(){_cache={}}
+function limpiaCache(){_cache={};_sesCache={}}
 function diaGen(bi,ti){var k=[bi,ti,P.peso,P.alt,P.edad,P.sexo,P.act,P.obj,JSON.stringify(P.excl||{}),(P.noQuiero||[]).join(",")].join("_");
   if(!_cache[k])_cache[k]=generaDia(bi,ti);return _cache[k]}
 function tipoIdx(wd){return BLOQUES_DIETA[P.bloque].map[wd]}
@@ -782,7 +894,7 @@ function trainDays(){
   if(typeof P.tdays==="string")P.tdays=P.tdays==="246"?[1,3,5]:[0,2,4];
   if(!P.tdays||!P.tdays.length)P.tdays=[0,2,4];
   return P.tdays.slice().sort(function(a,b){return a-b})}
-function sesionDeDia(wd){var td=trainDays(),i=td.indexOf(wd);if(i<0)return -1;return i%bloque().ses.length}
+function sesionDeDia(wd){var td=trainDays(),i=td.indexOf(wd);if(i<0)return -1;return i%sesionesActuales().length}
 
 /* ============ KCAL DEL DÍA SEGÚN OPCIONES ELEGIDAS ============ */
 function kcalDiaDe(b,ti){var d=diaGen(b,ti),tp=d.tipo,t=0;
@@ -834,10 +946,10 @@ function renderPlan(){
   var b=bloque();
   $("plan-now").innerHTML="<b>Ahora:</b> "+b.n+" ("+b.wk+") · Semana "+(P.sem+1)+" de 4 · media estimada <b>"+mediaSemanal()+" kcal/día</b> · gasto estimado ~"+tdee()+" kcal · objetivo "+kcalObjetivo()+" kcal.";
   $("phases").innerHTML=BLOQUES.map(function(x,i){var cur=i===P.bloque;
-    return '<div class="phase'+(cur?' cur':'')+'"><div class="idx">'+(i+1)+'</div><div class="body"><h4>'+x.n+(cur?'<span class="pill">Aquí</span>':'')+'</h4><div class="sub">'+x.ses.map(function(s){return s.n}).join(" · ")+'</div><div class="wk">'+x.wk+' · '+BLOQUES_DIETA[i].tipos.map(function(t){return t.n}).join("/")+'</div></div></div>'}).join("");
+    return '<div class="phase'+(cur?' cur':'')+'"><div class="idx">'+(i+1)+'</div><div class="body"><h4>'+x.n+(cur?'<span class="pill">Aquí</span>':'')+'</h4><div class="sub">'+sesionesDe(i).map(function(s){return s.n}).join(" · ")+'</div><div class="wk">'+x.wk+' · '+BLOQUES_DIETA[i].tipos.map(function(t){return t.n}).join("/")+'</div></div></div>'}).join("");
   var td=trainDays();
   $("week-grid").innerHTML=DIAS.map(function(dn,i){var tp=tiposBloque()[tipoIdx(i)],si=sesionDeDia(i);
-    return '<div class="d'+(si>-1?' train':'')+'"><div class="dn">'+dn+'</div><div class="dt">'+(si>-1?"🏋️":"🚶")+'</div><div class="dl">'+(si>-1?ABR[bloque().ses[si].n]||bloque().ses[si].n:ABR[tp.n]||tp.n)+'</div></div>'}).join("");
+    return '<div class="d'+(si>-1?' train':'')+'"><div class="dn">'+dn+'</div><div class="dt">'+(si>-1?"🏋️":"🚶")+'</div><div class="dl">'+(si>-1?(ABR[sesionesActuales()[si].n]||sesionesActuales()[si].n.slice(0,7)):(ABR[tp.n]||tp.n))+'</div></div>'}).join("");
   $("cardio-note").innerHTML="<b>Cardio y pasos:</b> "+cardioTexto()+".";
 }
 
@@ -911,12 +1023,12 @@ function bestSet(s){var b=0,bs=null;s.forEach(function(x){var e=e1rm(x.w,x.r);if
 function lastLog(n){var a=LOGS[n];return a&&a.length?a[a.length-1]:null}
 function renderEntreno(){
   var b=bloque();
-  $("entreno-eyebrow").textContent=b.n+" · "+b.wk+" · Semana "+(P.sem+1);
+  $("entreno-eyebrow").textContent=b.n+" · "+b.wk+" · Semana "+(P.sem+1)+" · "+nDias()+" días";
   $("entreno-lead").textContent="Descanso 75\" entre series. RIR = repeticiones que te dejas en recámara. Busca progresión de una semana a la siguiente.";
   var c=$("entreno-days");c.innerHTML="";
-  b.ses.forEach(function(s,i){var btn=document.createElement("button");btn.className="chip";btn.textContent=s.n;
+  sesionesActuales().forEach(function(s,i){var btn=document.createElement("button");btn.className="chip";btn.textContent=s.n;
     btn.setAttribute("aria-pressed",i===curSes);btn.addEventListener("click",function(){curSes=i;renderEntreno()});c.appendChild(btn)});
-  var ses=b.ses[curSes],html='<p class="lead" style="margin:-4px 0 12px">'+ses.sub+'</p>';
+  var ses=sesionesActuales()[curSes],html='<p class="lead" style="margin:-4px 0 12px">'+ses.sub+'</p>';
   ses.ex.forEach(function(e,ei){
     var nom=nombreEj(e[0],ei),cambiado=(nom!==e[0]);
     var lg=lastLog(nom),lt="Sin registro previo";
@@ -951,7 +1063,7 @@ function renderEntreno(){
   renderPRs();
 }
 $("save-session").addEventListener("click",function(){
-  var ses=bloque().ses[curSes],ins=[],n=0;
+  var ses=sesionesActuales()[curSes],ins=[],n=0;
   ses.ex.forEach(function(e,ei){
     var nom=nombreEj(e[0],ei);
     var sets=[];
@@ -988,7 +1100,7 @@ function renderPRs(){
 }
 
 function abreCambio(ei){
-  var base=bloque().ses[curSes].ex[ei][0],actual=nombreEj(base,ei);
+  var base=sesionesActuales()[curSes].ex[ei][0],actual=nombreEj(base,ei);
   var lista=alternativas(actual);
   if(lista.length<2)lista=alternativas(base);
   var g=patronDe(actual)||patronDe(base);
@@ -1282,7 +1394,7 @@ function burnFor(k){var r=rec(k);if(r.burn)return{v:r.burn,src:"manual"};
   return{v:null,src:null}}
 function intakeFor(k){var r=rec(k),dg=diaDeSemana(wdOf(k)),s=0,f=r.racion||1;
   r.meals.forEach(function(mi){var m=dg.comidas[mi];if(!m||m.libre)return;
-    s+=Math.round((m.o[getOpt(P.bloque,dg.tipo.k,mi)]||m.o[0]).k*f)});
+    s+=Math.round((m.o[optDia(k,P.bloque,dg.tipo.k,mi)]||m.o[0]).k*f)});
   r.extras.forEach(function(x){s+=x.k||0});return s}
 function renderAgua(k){
   var r=rec(k);r.agua=r.agua||0;
@@ -1323,10 +1435,10 @@ function renderHoy(){
   var nm=["lunes","martes","miércoles","jueves","viernes","sábado","domingo"];
   $("hoy-date").textContent="Hoy · "+nm[wd]+" "+k.split("-").reverse().join("/");
   var si=sesionDeDia(wd);
-  $("hoy-type").innerHTML="<b>Día "+tp.n.toUpperCase()+"</b> · "+kcalDia(tipoIdx(wd))+" kcal previstas · "+(si>-1?"toca <b>"+bloque().ses[si].n+"</b> 🏋️":"sin gimnasio 🚶")+" · objetivo "+pasosObjetivo().toLocaleString("es-ES")+" pasos.";
+  $("hoy-type").innerHTML="<b>Día "+tp.n.toUpperCase()+"</b> · "+kcalDia(tipoIdx(wd))+" kcal previstas · "+(si>-1?"toca <b>"+sesionesActuales()[si].n+"</b> 🏋️":"sin gimnasio 🚶")+" · objetivo "+pasosObjetivo().toLocaleString("es-ES")+" pasos.";
   var wrap='<div class="card"><div class="pad" style="padding-top:6px;padding-bottom:6px">';
   dg.comidas.forEach(function(m,mi){
-    var free=m.libre,o=m.o[getOpt(P.bloque,tp.k,mi)]||m.o[0],kc=free?null:o.k;
+    var free=m.libre,o=m.o[optDia(k,P.bloque,tp.k,mi)]||m.o[0],kc=free?null:o.k;
     wrap+='<label class="item"><input type="checkbox" data-m="'+mi+'"'+(r.meals.indexOf(mi)>-1?" checked":"")+'><span class="nm">'+m.n+'<br><span style="font-size:12px;color:var(--faint)">'+(free?"Tu comida libre de la semana":o.n)+'</span></span><span class="qty">'+(free?"libre":kc)+'</span></label>';
   });
   wrap+='</div></div>';
@@ -1488,8 +1600,8 @@ function infoDia(f){
   var wd=(f.getDay()+6)%7,st=situacion(f);
   if(st.fuera)return{fuera:st.fuera,wd:wd};
   var b=st.bloque,ti=BLOQUES_DIETA[b].map[wd],dg=diaGen(b,ti);
-  var td=trainDays(),si=td.indexOf(wd)>-1?td.indexOf(wd)%BLOQUES[b].ses.length:-1;
-  return{wd:wd,bloque:b,sem:st.sem,ti:ti,dg:dg,tipo:dg.tipo,si:si,ses:si>-1?BLOQUES[b].ses[si]:null,kcal:kcalDiaDe(b,ti)};
+  var sl=sesionesDe(b),td=trainDays(),si=td.indexOf(wd)>-1?td.indexOf(wd)%sl.length:-1;
+  return{wd:wd,bloque:b,sem:st.sem,ti:ti,dg:dg,tipo:dg.tipo,si:si,ses:si>-1?sl[si]:null,kcal:kcalDiaDe(b,ti)};
 }
 function renderCalendario(){
   renderCalVista();
@@ -1543,8 +1655,8 @@ function renderSemana(){
         : '<div style="font-size:13.5px;margin-bottom:8px;color:var(--muted)">🚶 Sin gimnasio · '+pasosObjetivo().toLocaleString("es-ES")+' pasos</div>';
       inf.dg.comidas.forEach(function(m,mi){
         if(m.libre){h+='<div style="font-size:12.5px;color:var(--plum)">· '+m.n+': libre</div>';return}
-        var o=m.o[getOpt(inf.bloque,inf.tipo.k,mi)]||m.o[0];
-        h+='<div style="font-size:12.5px;color:var(--muted)">· '+m.n+': <span style="color:var(--ink)">'+o.n+'</span> ('+o.m+', '+o.k+' kcal)</div>';
+        var o=m.o[optDia(k,inf.bloque,inf.tipo.k,mi)]||m.o[0];
+        h+='<div style="font-size:12.5px;color:var(--muted)">· '+m.n+': <span style="color:var(--ink)">'+o.n+'</span>'+(tieneOptDia(k,mi)?' <span style="color:var(--iron)">★</span>':'')+' ('+o.m+', '+o.k+' kcal)</div>';
       });
     }
     h+='</div></div>';
@@ -1572,12 +1684,37 @@ function renderDetalleDia(){
   h+='<div style="font:600 10px var(--mono);text-transform:uppercase;color:var(--faint);margin-bottom:6px">Día '+inf.tipo.n+' · '+inf.kcal+' kcal</div>';
   inf.dg.comidas.forEach(function(m,mi){
     if(m.libre){h+='<div class="pr"><span class="nm">'+m.n+'</span><span class="v" style="color:var(--plum)">libre</span></div>';return}
-    var o=m.o[getOpt(inf.bloque,inf.tipo.k,mi)]||m.o[0];
-    h+='<div class="pr"><span class="nm">'+m.n+'<br><span style="font-size:11.5px;color:var(--faint)">'+o.n+' · '+o.m+'</span></span><span class="v">'+o.k+'</span></div>';
+    var o=m.o[optDia(CAL_SEL,inf.bloque,inf.tipo.k,mi)]||m.o[0];
+    h+='<div class="pr"><span class="nm">'+m.n+'<br><span style="font-size:11.5px;color:var(--faint)">'+o.n+' · '+o.m+(tieneOptDia(CAL_SEL,mi)?' <span style="color:var(--iron)">★ solo este día</span>':'')+'</span></span>'+
+      '<span><span class="v">'+o.k+'</span> <button type="button" class="cmd" data-m="'+mi+'" data-b="'+inf.bloque+'" data-t="'+inf.tipo.k+'" data-ti="'+inf.ti+'" style="background:var(--panel2);border:1px solid var(--line);color:var(--ink);font:700 11px var(--sans);padding:6px 9px;border-radius:8px;cursor:pointer;margin-left:6px">⇄</button></span></div>';
   });
   if(esOtro)h+='<p class="lead" style="margin:12px 0 0;font-size:12.5px">Así te quedará la comida en ese bloque. Para cambiar las opciones, selecciona ese bloque en ⚙️ y ve a Comida.</p>';
   h+='</div></div>';
   $("cal-detalle").innerHTML=h;
+  Array.prototype.forEach.call($("cal-detalle").querySelectorAll("button.cmd"),function(bt){
+    bt.addEventListener("click",function(){
+      abreOpcionFecha(CAL_SEL,parseInt(bt.getAttribute("data-b"),10),parseInt(bt.getAttribute("data-ti"),10),parseInt(bt.getAttribute("data-m"),10))})});
+}
+function abreOpcionFecha(k,b,ti,mi){
+  var dg=diaGen(b,ti),tp=dg.tipo,m=dg.comidas[mi],sel=optDia(k,b,tp.k,mi);
+  var f=k.split("-").reverse().join("/");
+  $("p-title").innerHTML="⇄ "+m.n+" · "+f;
+  var h='<p class="lead">Elige qué vas a comer <b>ese día concreto</b>. Si no tocas nada, se usa tu opción habitual del bloque.</p>';
+  m.o.forEach(function(o,oi){
+    h+='<label class="opt"><input type="radio" name="opcf"'+(oi===sel?" checked":"")+' data-o="'+oi+'">'+
+      '<span class="ot"><b>'+o.n+'</b> <span style="font:600 9.5px var(--mono);color:var(--faint);border:1px solid var(--line);padding:2px 6px;border-radius:20px">'+o.m+'</span>'+
+      '<br><span style="color:var(--muted);font-size:12.5px">'+o.t+'</span></span><span class="ok">'+o.k+'</span></label>';
+  });
+  h+='<button class="btn primary full" id="opcf-save" style="margin-top:14px">Fijar solo para este día</button>'+
+     '<button class="btn full" id="opcf-todos" style="margin-top:10px">Usarla en todos los días '+tp.n.toLowerCase()+' del bloque</button>';
+  if(tieneOptDia(k,mi))h+='<button class="btn full" id="opcf-quita" style="margin-top:10px">Quitar la excepción de este día</button>';
+  $("p-body").innerHTML=h;
+  function elegida(){var r=$("p-body").querySelector("input[name=opcf]:checked");return r?parseInt(r.getAttribute("data-o"),10):sel}
+  $("opcf-save").addEventListener("click",function(){setOptDia(k,mi,elegida());cierra()});
+  $("opcf-todos").addEventListener("click",function(){setOpt(b,tp.k,mi,elegida());quitaOptDia(k,mi);cierra()});
+  if($("opcf-quita"))$("opcf-quita").addEventListener("click",function(){quitaOptDia(k,mi);cierra()});
+  function cierra(){$("pmodal").classList.remove("on");renderCalendario();renderHoy();renderComida();renderBasket()}
+  $("pmodal").classList.add("on");
 }
 function navega(dir){
   if(CAL_VISTA==="semana"){CAL_LUNES=new Date(CAL_LUNES.getFullYear(),CAL_LUNES.getMonth(),CAL_LUNES.getDate()+dir*7)}
