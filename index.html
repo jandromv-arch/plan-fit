@@ -213,9 +213,10 @@
     <p class="eyebrow">Compra semanal</p>
     <p class="lead" id="compra-lead"></p>
     <div id="adj-box"></div>
+    <div class="chips" id="view-chips" role="group" aria-label="Vista"></div>
     <div class="progress"><div class="bar"><i id="bar"></i></div><span class="pct" id="pct">0%</span></div>
     <div id="shop"></div>
-    <p class="lead" style="margin-top:14px;font-size:12.5px">La lupa 🔍 de cada producto abre su búsqueda en el supermercado que elijas en ⚙️. Los precios y la disponibilidad los ves allí, no aquí.</p>
+    <p class="lead" style="margin-top:14px;font-size:12.5px">Toca la <b>ⓘ</b> de cada producto para ver cuánto necesitas, en qué comidas lo usas, sus macros y apuntar su precio. Desde ahí también puedes abrir el súper si quieres ver la foto o la ficha.</p>
   </section>
 
   <!-- PLAN -->
@@ -293,6 +294,12 @@
   <button class="tab" id="t-compra" role="tab" aria-selected="false" aria-controls="p-compra"><span class="ic">🛒</span>Compra</button>
   <button class="tab" id="t-plan" role="tab" aria-selected="false" aria-controls="p-plan"><span class="ic">📈</span>Plan</button>
 </div></nav>
+
+<div class="modal" id="pmodal"><div class="sheet">
+  <button class="close" id="pclose">✕</button>
+  <h3 id="p-title">Producto</h3>
+  <div id="p-body"></div>
+</div></div>
 
 <div class="modal" id="modal"><div class="sheet">
   <button class="close" id="close-profile">✕</button>
@@ -379,6 +386,12 @@ var F={
  pudding:[120,15,8,3,"u","Despensa","Pudding proteico","pudding proteico"],
  ketchup:[10,0,2,0,"u","Despensa","Salsas 0% (ketchup, BBQ)","de salsa 0%"]
 };
+var ICON={huevo:"🥚",claras:"🥚",yogur:"🥛",queso:"🧀",requeson:"🧀",pollo:"🍗",pavo:"🍗",
+ ternera:"🥩",cerdo:"🥩",merluza:"🐟",salmon:"🐟",atun:"🐟",jamon:"🥓",patata:"🥔",boniato:"🍠",
+ arroz:"🍚",pasta:"🍝",avena:"🥣",rebanada:"🍞",tortaarroz:"🍘",tacomaiz:"🌮",fajita:"🌯",
+ fruta:"🍎",frutosrojos:"🫐",aguacate:"🥑",aove:"🫒",almendras:"🥜",cacahuete:"🥜",
+ verdura:"🥦",ensalada:"🥗",tomatetrit:"🍅",pudding:"🍮",ketchup:"🧂"};
+function iconOf(k){return ICON[k]||"🛒"}
 function kcalOf(ing){var t=0;ing.forEach(function(p){var f=F[p[0]];if(f)t+=f[0]*p[1]});return Math.round(t)}
 function macroOf(ing){var t=[0,0,0];ing.forEach(function(p){var f=F[p[0]];if(f){t[0]+=f[1]*p[1];t[1]+=f[2]*p[1];t[2]+=f[3]*p[1]}});return[Math.round(t[0]),Math.round(t[1]),Math.round(t[2])]}
 
@@ -727,6 +740,22 @@ function renderComida(){
   $("notas").innerHTML='<ul style="margin:0;padding-left:18px;font-size:13.5px;color:var(--muted)">'+NOTAS.map(function(x){return '<li style="margin:5px 0">'+x+'</li>'}).join("")+'</ul>';
 }
 
+/* ============ PRECIOS ============ */
+var PRICES={};(function(){var r=LS.get("pf5_prices");if(r){try{PRICES=JSON.parse(r)}catch(e){PRICES={}}}})();
+function savePrices(){LS.set("pf5_prices",JSON.stringify(PRICES))}
+function unidadPrecio(u){return u==="u"?"€/ud":u==="ml"?"€/L":"€/kg"}
+function costeDe(k,qty,sup){
+  var pr=PRICES[k];if(!pr||pr[sup]==null)return null;
+  var u=F[k][4],p=pr[sup];
+  return u==="u"?qty*p:qty/1000*p;
+}
+function mejorSuper(k){
+  var pr=PRICES[k];if(!pr)return null;
+  var best=null;
+  Object.keys(pr).forEach(function(sp){if(pr[sp]==null)return;
+    if(best===null||pr[sp]<pr[best])best=sp});
+  return best;
+}
 /* ============ COMPRA ============ */
 var SUPERS={
  mercadona:{n:"Mercadona",u:function(q){return "https://tienda.mercadona.es/search-results?query="+encodeURIComponent(q)}},
@@ -763,23 +792,19 @@ function renderBasket(){
     dg.comidas.forEach(function(m,mi){if(m.libre)return;
       var o=m.o[getOpt(b,tk,mi)]||m.o[0];
       o.i.forEach(function(p){tot[p[0]]=(tot[p[0]]||0)+p[1]*f})})}
+  ULTIMA_CESTA=tot;
   var sec={};
-  Object.keys(tot).forEach(function(k){var d=F[k];if(!d)return;(sec[d[5]]=sec[d[5]]||[]).push([d[6],fmtQ(d[4],tot[k])])});
+  Object.keys(tot).forEach(function(k){var d=F[k];if(!d)return;(sec[d[5]]=sec[d[5]]||[]).push([d[6],fmtQ(d[4],tot[k]),k,tot[k]])});
+  renderVista();
+  if(VISTA==="super"){renderPorSuper();
+    $("compra-lead").innerHTML="Agrupada por el supermercado donde cada producto te sale más barato, según los precios que has ido apuntando.";
+    return}
   var order=["Frutas y verduras","Carnicería y pescadería","Lácteos y huevos","Cereales y pan","Despensa"];
   var el=$("shop");el.innerHTML="";total=0;
   order.forEach(function(s){var it=sec[s];if(!it)return;
     it.sort(function(a,b){return a[0]<b[0]?-1:1});
     var g=document.createElement("div");g.className="grp";g.innerHTML='<h4>'+s+'</h4>';
-    it.forEach(function(x){total++;var id=s+"|"+x[0];
-      var l=document.createElement("label");l.className="item";
-      var cb=document.createElement("input");cb.type="checkbox";cb.checked=!!checked[id];
-      var nm=document.createElement("span");nm.className="nm";nm.textContent=x[0];
-      var q=document.createElement("span");q.className="qty";q.textContent=x[1];
-      cb.addEventListener("change",function(){checked[id]=cb.checked;LS.set("pf4_compra",JSON.stringify(checked));updateBar()});
-      var a=document.createElement("a");a.href=superU(x[0]);a.target="_blank";a.rel="noopener";
-      a.textContent="🔍";a.style.cssText="text-decoration:none;font-size:15px;padding:0 2px;opacity:.65";
-      a.addEventListener("click",function(ev){ev.stopPropagation()});
-      l.appendChild(cb);l.appendChild(nm);l.appendChild(q);l.appendChild(a);g.appendChild(l)});
+    it.forEach(function(x){total++;g.appendChild(itemRow(s,x))});
     el.appendChild(g)});
   var extra=document.createElement("div");extra.className="grp";
   extra.innerHTML='<h4>Básicos</h4><p class="lead" style="margin:0;font-size:13px">Sal marina o del Himalaya · limones (agua en ayunas) · especias · agua mineral. Duran varias semanas.</p>';
@@ -802,6 +827,96 @@ function renderBasket(){
   }
   updateBar();
 }
+var ULTIMA_CESTA={},VISTA="junto";
+function itemRow(sec,x){
+  var id=sec+"|"+x[0],k=x[2],qty=x[3];
+  var l=document.createElement("label");l.className="item";
+  var cb=document.createElement("input");cb.type="checkbox";cb.checked=!!checked[id];
+  cb.addEventListener("change",function(){checked[id]=cb.checked;LS.set("pf4_compra",JSON.stringify(checked));updateBar()});
+  var nm=document.createElement("span");nm.className="nm";
+  var best=mejorSuper(k),cost=best?costeDe(k,qty,best):null;
+  nm.innerHTML=iconOf(k)+" "+x[0]+(cost!=null?'<br><span style="font-size:11.5px;color:var(--fresh)">'+cost.toFixed(2)+' € · '+(SUPERS[best]||{n:best}).n+'</span>':'');
+  var q=document.createElement("span");q.className="qty";q.textContent=x[1];
+  var b=document.createElement("button");b.type="button";b.textContent="ⓘ";
+  b.style.cssText="background:none;border:0;color:var(--muted);font-size:17px;cursor:pointer;padding:0 2px";
+  b.addEventListener("click",function(ev){ev.preventDefault();ev.stopPropagation();abreProducto(k,qty)});
+  l.appendChild(cb);l.appendChild(nm);l.appendChild(q);l.appendChild(b);
+  return l;
+}
+function renderVista(){
+  var c=$("view-chips");c.innerHTML="";
+  [["junto","Lista completa"],["super","Por supermercado"]].forEach(function(v){
+    var b=document.createElement("button");b.className="chip";b.textContent=v[1];
+    b.setAttribute("aria-pressed",VISTA===v[0]);
+    b.addEventListener("click",function(){VISTA=v[0];renderBasket()});c.appendChild(b)});
+}
+function renderPorSuper(){
+  var el=$("shop");el.innerHTML="";total=0;
+  var grupos={},sinPrecio=[];
+  Object.keys(ULTIMA_CESTA).forEach(function(k){
+    var d=F[k];if(!d)return;
+    var best=mejorSuper(k);
+    var fila=[d[6],fmtQ(d[4],ULTIMA_CESTA[k]),k,ULTIMA_CESTA[k]];
+    if(best)(grupos[best]=grupos[best]||[]).push(fila); else sinPrecio.push(fila);
+  });
+  var totalGlobal=0;
+  Object.keys(grupos).forEach(function(sp){
+    var g=document.createElement("div");g.className="grp";
+    var sub=0;grupos[sp].forEach(function(f){var c=costeDe(f[2],f[3],sp);if(c!=null)sub+=c});
+    totalGlobal+=sub;
+    g.innerHTML='<h4>'+(SUPERS[sp]||{n:sp}).n+' · '+sub.toFixed(2)+' €</h4>';
+    grupos[sp].sort(function(a,b){return a[0]<b[0]?-1:1});
+    grupos[sp].forEach(function(f){total++;g.appendChild(itemRow(sp,f))});
+    el.appendChild(g);
+  });
+  if(sinPrecio.length){
+    var g2=document.createElement("div");g2.className="grp";
+    g2.innerHTML='<h4>Sin precio todavía</h4>';
+    sinPrecio.sort(function(a,b){return a[0]<b[0]?-1:1});
+    sinPrecio.forEach(function(f){total++;g2.appendChild(itemRow("sin",f))});
+    el.appendChild(g2);
+  }
+  var res=document.createElement("div");res.className="note g";res.style.marginTop="14px";
+  res.innerHTML=totalGlobal>0
+    ?"<b>Total con precios guardados: "+totalGlobal.toFixed(2)+" €.</b> Solo cuenta los productos donde ya has apuntado precio ("+(Object.keys(ULTIMA_CESTA).length-sinPrecio.length)+" de "+Object.keys(ULTIMA_CESTA).length+")."
+    :"Aún no has apuntado ningún precio. Toca la <b>ⓘ</b> de un producto y añade lo que cuesta en tu súper; la app recuerda y te dirá dónde sale más barato.";
+  el.appendChild(res);
+  updateBar();
+}
+function abreProducto(k,qty){
+  var d=F[k],u=d[4];
+  $("p-title").innerHTML=iconOf(k)+" "+d[6];
+  var usos=[];
+  for(var wd=0;wd<7;wd++){var dg=diaDeSemana(wd);
+    dg.comidas.forEach(function(m,mi){if(m.libre)return;
+      var o=m.o[getOpt(P.bloque,dg.tipo.k,mi)]||m.o[0];
+      o.i.forEach(function(pp){if(pp[0]===k&&usos.indexOf(o.n)<0)usos.push(o.n)})})}
+  var per=u==="u"?"por unidad":"por 100 "+(u==="ml"?"ml":"g");
+  var mul=u==="u"?1:100;
+  var mm=macroOf([[k,mul]]),kc=kcalOf([[k,mul]]);
+  var h='<p class="lead">Necesitas <b style="color:var(--ink)">'+fmtQ(u,qty)+'</b> esta semana.</p>'+
+    '<div class="pr"><span class="nm">Energía ('+per+')</span><span class="v">'+kc+' kcal</span></div>'+
+    '<div class="pr"><span class="nm">Proteína / carbos / grasa</span><span class="v">'+mm[0]+' / '+mm[1]+' / '+mm[2]+' g</span></div>';
+  if(usos.length)h+='<p class="lead" style="margin:14px 0 6px"><b style="color:var(--fresh)">Lo usas en:</b> '+usos.join(" · ")+'</p>';
+  h+='<h2 class="sec">Precio '+unidadPrecio(u)+'</h2><p class="lead">Apúntalo una vez y se guarda. La app usará el más barato.</p>';
+  Object.keys(SUPERS).forEach(function(sp){
+    var v=(PRICES[k]&&PRICES[k][sp]!=null)?PRICES[k][sp]:"";
+    h+='<div class="field"><label>'+SUPERS[sp].n+'</label><input type="number" step="0.01" inputmode="decimal" id="pz-'+sp+'" value="'+v+'" placeholder="0,00"></div>';
+  });
+  h+='<button class="btn primary full" id="pz-save">Guardar precios</button>'+
+     '<a class="btn full" style="margin-top:10px;text-decoration:none" href="'+superU(d[6])+'" target="_blank" rel="noopener">Ver en '+(SUPERS[P.superm]||SUPERS.mercadona).n+' ↗</a>';
+  $("p-body").innerHTML=h;
+  $("pz-save").addEventListener("click",function(){
+    PRICES[k]=PRICES[k]||{};
+    Object.keys(SUPERS).forEach(function(sp){
+      var v=parseFloat(($("pz-"+sp)||{}).value);
+      PRICES[k][sp]=(!isNaN(v)&&v>0)?v:null});
+    savePrices();$("pmodal").classList.remove("on");renderBasket();
+  });
+  $("pmodal").classList.add("on");
+}
+$("pclose").addEventListener("click",function(){$("pmodal").classList.remove("on")});
+$("pmodal").addEventListener("click",function(e){if(e.target===$("pmodal"))$("pmodal").classList.remove("on")});
 function updateBar(){var d=0;for(var k in checked){if(checked[k])d++}var p=total?Math.round(d/total*100):0;$("bar").style.width=p+"%";$("pct").textContent=p+"%"}
 
 /* ============ HOY ============ */
@@ -911,7 +1026,7 @@ $("c-save").addEventListener("click",function(){
 
 /* ============ COPIA DE SEGURIDAD ============ */
 function backupObj(){return{v:4,fecha:new Date().toISOString(),
-  profile:P,opts:OPTS,logs:LOGS,hist:HIST,imports:IMPORTS,daily:DAILY,compra:checked}}
+  profile:P,opts:OPTS,logs:LOGS,hist:HIST,imports:IMPORTS,daily:DAILY,compra:checked,prices:PRICES}}
 function backupStr(){return JSON.stringify(backupObj())}
 $("bk-copy").addEventListener("click",function(){
   var t=backupStr();
@@ -944,6 +1059,7 @@ $("bk-restore").addEventListener("click",function(){
   if(d.imports){IMPORTS=d.imports;LS.set("pf4_imports",JSON.stringify(IMPORTS))}
   if(d.daily){DAILY=d.daily;LS.set("pf4_daily",JSON.stringify(DAILY))}
   if(d.compra){checked=d.compra;LS.set("pf4_compra",JSON.stringify(checked))}
+  if(d.prices){PRICES=d.prices;savePrices()}
   $("bk-in").value="";fillP();renderAll();renderHist();
   $("bk-out").innerHTML='<div class="insight" style="margin-top:10px"><b>Restaurado.</b> Datos de la copia del '+((d.fecha||"").slice(0,10)||"?")+'.</div>';
 });
