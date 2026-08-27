@@ -16,6 +16,8 @@
     --sky:#6FB7F0;--sky-dim:rgba(111,183,240,.14);--plum:#C79BF2;--plum-dim:rgba(199,155,242,.14);
     --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;--sans:-apple-system,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  button,.chip,.item,.opt,label,a{touch-action:manipulation}
+  input,select,textarea{font-size:16px}
   html,body{margin:0;padding:0}
   body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
   .wrap{max-width:660px;margin:0 auto;padding:0 16px}
@@ -48,7 +50,7 @@
   .note.p{background:var(--plum-dim);border-color:rgba(199,155,242,.3)}.note.p b{color:var(--plum)}
   .field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
   .field label{font:600 10px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
-  .field input,.field select,.field textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--ink);font:600 15px var(--sans);padding:11px 12px;-webkit-appearance:none;appearance:none;width:100%}
+  .field input,.field select,.field textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;color:var(--ink);font:600 16px var(--sans);padding:11px 12px;-webkit-appearance:none;appearance:none;width:100%}
   .field textarea{font-weight:500;min-height:60px}
   .field input:focus,.field select:focus,.field textarea:focus{outline:2px solid var(--fresh);outline-offset:1px;border-color:transparent}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
@@ -75,7 +77,7 @@
   .stp{display:flex;align-items:center;gap:3px}
   .stp button{background:var(--panel2);border:1px solid var(--line);color:var(--ink);font:700 15px var(--sans);width:26px;height:34px;border-radius:8px;cursor:pointer;flex:0 0 auto;line-height:1}
   .setrow .rst{background:none;border:0;color:var(--muted);font-size:15px;cursor:pointer;padding:0}
-  .setrow input{background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);font:700 15px var(--mono);text-align:center;padding:9px 3px;width:100%;-webkit-appearance:none;appearance:none}
+  .setrow input{background:var(--bg);border:1px solid var(--line);border-radius:9px;color:var(--ink);font:700 16px var(--mono);text-align:center;padding:9px 3px;width:100%;-webkit-appearance:none;appearance:none}
   .setrow input:focus{outline:2px solid var(--iron);outline-offset:1px;border-color:transparent}
   .ex .exf{padding:2px 14px 12px}
   .insight{background:var(--iron-dim);border:1px solid rgba(245,181,74,.32);border-radius:12px;padding:12px 14px;font-size:13px;margin:6px 0 4px}
@@ -168,15 +170,15 @@
       <div class="macro"><div class="lab">Balance</div><div class="val"><span id="h-net">—</span></div></div>
     </div>
     <div class="note g" id="h-verdict" style="margin-bottom:14px"></div>
-    <h2 class="sec">Agua y pasos</h2>
-    <div class="card"><div class="pad">
+    <details id="h-extras-box"><summary style="color:var(--sky)">Agua y pasos</summary>
+    <div class="card" style="margin-top:8px"><div class="pad">
       <p class="lead" style="margin:0 0 8px">Agua · objetivo 3 L (12 vasos de 250 ml)</p>
       <div id="h-agua" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
       <p class="lead" style="margin:0 0 8px" id="h-pasos-lab">Pasos</p>
       <div class="bar" style="margin-bottom:10px"><i id="h-pasos-bar"></i></div>
       <div class="field" style="margin:0"><input id="h-pasos" type="number" inputmode="numeric" placeholder="pasos de hoy"></div>
       <button class="btn full" id="h-pasos-save" style="margin-top:10px">Guardar pasos</button>
-    </div></div>
+    </div></div></details>
 
     <h2 class="sec">Comidas de hoy</h2>
     <div class="chips" id="h-racion" role="group" aria-label="Ración"></div>
@@ -802,46 +804,39 @@ function renderPlan(){
 
 
 /* ============ EQUIVALENCIAS DE EJERCICIOS ============
-   Agrupadas por patrón de movimiento y músculo, no por parecido de nombre.
-   eq: B=barra · M=mancuernas · P=polea/máquina · C=peso corporal */
-var ALTS={
- "PRESS BANCA PLANO":[["PRESS BANCA PLANO","B"],["PRESS PLANO CON MANCUERNAS","M"],["PRESS EN MÁQUINA (PECHO)","P"],["FLEXIONES (lastre si hace falta)","C"]],
- "PRESS BANCA INCLINADO MANCUERNAS":[["PRESS BANCA INCLINADO MANCUERNAS","M"],["PRESS INCLINADO CON BARRA","B"],["PRESS INCLINADO EN MÁQUINA","P"],["FLEXIONES CON PIES ELEVADOS","C"]],
- "PRESS MILITAR CON MANCUERNAS":[["PRESS MILITAR CON MANCUERNAS","M"],["PRESS MILITAR CON BARRA","B"],["PRESS HOMBRO EN MÁQUINA","P"],["PIKE PUSH-UP","C"]],
- "CRUCES DE POLEA":[["CRUCES DE POLEA","P"],["APERTURAS CON MANCUERNAS EN BANCO","M"],["PEC FLY / CONTRACTORA","P"],["FLEXIONES ARQUERO","C"]],
- "PEC FLY o MÁQUINA CONTRACTORA":[["PEC FLY / CONTRACTORA","P"],["APERTURAS CON MANCUERNAS","M"],["CRUCES DE POLEA","P"],["FLEXIONES CON APERTURA","C"]],
- "FONDOS EN PARALELAS":[["FONDOS EN PARALELAS","C"],["FONDOS EN MÁQUINA ASISTIDA","P"],["PRESS DECLINADO CON MANCUERNAS","M"],["FONDOS EN BANCO (tríceps)","C"]],
- "ELEVACIONES LATERALES":[["ELEVACIONES LATERALES CON MANCUERNAS","M"],["ELEVACIONES LATERALES EN POLEA","P"],["ELEVACIONES LATERALES EN MÁQUINA","P"],["ELEVACIONES CON BOTELLAS / BANDA","C"]],
- "EXTENSIÓN TRICEPS EN POLEA ALTA":[["EXTENSIÓN TRÍCEPS EN POLEA ALTA","P"],["EXTENSIÓN TRÍCEPS CON MANCUERNA SOBRE CABEZA","M"],["PRESS FRANCÉS CON BARRA Z","B"],["FONDOS EN BANCO","C"]],
- "EXTENSIÓN TRICEPS EN POLEA ALTA UNILATERAL":[["EXTENSIÓN TRÍCEPS POLEA UNILATERAL","P"],["PATADA DE TRÍCEPS CON MANCUERNA","M"],["EXTENSIÓN TRÍCEPS SOBRE CABEZA","M"],["FONDOS EN BANCO","C"]],
- "ADDUCTOR EN MAQUINA":[["ADDUCTOR EN MÁQUINA","P"],["SENTADILLA SUMO CON MANCUERNA","M"],["ZANCADA LATERAL","C"],["PUENTE CON RODILLAS JUNTAS (banda)","C"]],
- "SENTADILLA LIBRE":[["SENTADILLA LIBRE CON BARRA","B"],["SENTADILLA GOBLET CON MANCUERNA","M"],["PRENSA","P"],["SENTADILLA BÚLGARA","M"]],
- "SENTADILLA SUMO":[["SENTADILLA SUMO CON BARRA","B"],["SENTADILLA SUMO CON MANCUERNA","M"],["PRENSA PIES ANCHOS","P"],["SENTADILLA SUMO SIN PESO","C"]],
- "SENTADILLA BULGARA EN MULTIPOWER":[["SENTADILLA BÚLGARA EN MULTIPOWER","B"],["SENTADILLA BÚLGARA CON MANCUERNAS","M"],["ZANCADA CAMINANDO","M"],["SENTADILLA A UNA PIERNA ASISTIDA","C"]],
- "PRENSA":[["PRENSA","P"],["SENTADILLA GOBLET","M"],["SENTADILLA HACK","P"],["ZANCADA CON MANCUERNAS","M"]],
- "CURL FEMORAL EN MAQUINA (sentado, tumbado)":[["CURL FEMORAL EN MÁQUINA","P"],["PESO MUERTO RUMANO CON MANCUERNAS","M"],["CURL FEMORAL CON BANDA","C"],["PUENTE DE GLÚTEO A UNA PIERNA","C"]],
- "CURL FEMORAL EN MAQUINA 1 PIERNA":[["CURL FEMORAL 1 PIERNA EN MÁQUINA","P"],["RUMANO A UNA PIERNA CON MANCUERNA","M"],["CURL NÓRDICO ASISTIDO","C"],["CURL FEMORAL CON BANDA","C"]],
- "EXTENSION DE CUADRICEPS":[["EXTENSIÓN DE CUÁDRICEPS","P"],["SENTADILLA SISSY","C"],["ZANCADA CORTA CON MANCUERNAS","M"],["SENTADILLA GOBLET ALTA","M"]],
- "PESO MUERTO":[["PESO MUERTO CON BARRA","B"],["PESO MUERTO CON MANCUERNAS","M"],["PESO MUERTO RUMANO EN MÁQUINA","P"],["HIP THRUST","B"]],
- "PESO MUERTO CON MANCUERNAS":[["PESO MUERTO CON MANCUERNAS","M"],["PESO MUERTO RUMANO CON BARRA","B"],["BUENOS DÍAS","B"],["PUENTE DE GLÚTEO","C"]],
- "PESO MUERTO MANCUERNAS 1 PIERNA":[["PESO MUERTO 1 PIERNA CON MANCUERNA","M"],["RUMANO CON BARRA","B"],["CURL FEMORAL EN MÁQUINA","P"],["PUENTE 1 PIERNA","C"]],
- "GEMELOS DE PIES (SMITH)":[["GEMELOS DE PIE EN SMITH","B"],["GEMELOS CON MANCUERNA A 1 PIERNA","M"],["GEMELOS EN MÁQUINA / PRENSA","P"],["GEMELOS EN ESCALÓN","C"]],
- "JALON AL PECHO":[["JALÓN AL PECHO EN POLEA","P"],["DOMINADAS (asistidas si hace falta)","C"],["REMO ABIERTO CON MANCUERNAS","M"],["JALÓN CON BANDA","C"]],
- "DOMINADAS":[["DOMINADAS","C"],["JALÓN AL PECHO","P"],["DOMINADAS ASISTIDAS EN MÁQUINA","P"],["REMO INVERTIDO EN BARRA BAJA","C"]],
- "REMO GIRONDA":[["REMO GIRONDA (polea sentado)","P"],["REMO CON BARRA","B"],["REMO CON MANCUERNAS A DOS MANOS","M"],["REMO INVERTIDO","C"]],
- "REMO EN PUNTA (REMO EN T)":[["REMO EN T","B"],["REMO CON BARRA","B"],["REMO EN MÁQUINA / POLEA","P"],["REMO UNILATERAL CON MANCUERNA","M"]],
- "REMO EN T":[["REMO EN T","B"],["REMO CON BARRA","B"],["REMO EN MÁQUINA / POLEA","P"],["REMO UNILATERAL CON MANCUERNA","M"]],
- "REMO UNILATERAL MANCUERNA":[["REMO UNILATERAL CON MANCUERNA","M"],["REMO EN POLEA UNILATERAL","P"],["REMO CON BARRA","B"],["REMO INVERTIDO","C"]],
- "CURL BICEPS POLEA BAJA":[["CURL BÍCEPS EN POLEA BAJA","P"],["CURL BÍCEPS CON MANCUERNAS","M"],["CURL CON BARRA Z","B"],["CURL ISOMÉTRICO CON TOALLA","C"]],
- "CURL BICEPS SENTADO 45º":[["CURL BÍCEPS SENTADO A 45º CON MANCUERNAS","M"],["CURL EN POLEA BAJA","P"],["CURL EN BANCO SCOTT","B"],["CURL MARTILLO","M"]],
- "CURL BICEPS CON BARRA Z (21)":[["CURL CON BARRA Z (21)","B"],["CURL CON MANCUERNAS (21)","M"],["CURL EN POLEA (21)","P"],["CURL MARTILLO","M"]],
- "CIRCUITO ABS":[["CIRCUITO ABS","C"],["PLANCHA + PLANCHA LATERAL","C"],["RUEDA ABDOMINAL","C"],["CRUNCH EN POLEA","P"]]
+   Agrupadas por PATRÓN de movimiento. Cualquier ejercicio del grupo sirve
+   como alternativa de los demás, así que las sustituciones también tienen
+   sus propias alternativas. eq: B=barra M=mancuernas P=máquina/polea C=peso corporal */
+var PATRONES={
+ "Empuje horizontal (pecho)":[["PRESS BANCA PLANO","B"],["PRESS PLANO CON MANCUERNAS","M"],["PRESS EN MÁQUINA (PECHO)","P"],["FLEXIONES (lastre si hace falta)","C"],["PRESS BANCA INCLINADO MANCUERNAS","M"],["PRESS INCLINADO CON BARRA","B"],["PRESS INCLINADO EN MÁQUINA","P"],["FLEXIONES CON PIES ELEVADOS","C"]],
+ "Apertura de pecho":[["CRUCES DE POLEA","P"],["PEC FLY o MÁQUINA CONTRACTORA","P"],["PEC FLY / MÁQUINA CONTRACTORA","P"],["APERTURAS CON MANCUERNAS EN BANCO","M"],["FLEXIONES ARQUERO","C"]],
+ "Empuje vertical (hombro)":[["PRESS MILITAR CON MANCUERNAS","M"],["PRESS MILITAR CON BARRA","B"],["PRESS HOMBRO EN MÁQUINA","P"],["PRESS ARNOLD","M"],["PIKE PUSH-UP","C"]],
+ "Deltoide lateral":[["ELEVACIONES LATERALES","M"],["ELEVACIONES LATERALES EN POLEA","P"],["ELEVACIONES LATERALES EN MÁQUINA","P"],["ELEVACIONES CON BANDA","C"]],
+ "Tríceps":[["EXTENSIÓN TRICEPS EN POLEA ALTA","P"],["EXTENSIÓN TRICEPS EN POLEA ALTA UNILATERAL","P"],["EXTENSIÓN TRÍCEPS POLEA ALTA UNILATERAL","P"],["EXTENSIÓN TRÍCEPS CON MANCUERNA SOBRE CABEZA","M"],["PATADA DE TRÍCEPS CON MANCUERNA","M"],["PRESS FRANCÉS CON BARRA Z","B"],["FONDOS EN PARALELAS","C"],["FONDOS EN BANCO","C"]],
+ "Bíceps":[["CURL BICEPS POLEA BAJA","P"],["CURL BICEPS SENTADO 45º","M"],["CURL BICEPS CON BARRA Z (21)","B"],["CURL CON MANCUERNAS","M"],["CURL MARTILLO","M"],["CURL EN BANCO SCOTT","B"],["CURL ISOMÉTRICO CON TOALLA","C"]],
+ "Tracción vertical (dorsal)":[["JALON AL PECHO","P"],["DOMINADAS","C"],["DOMINADAS ASISTIDAS EN MÁQUINA","P"],["JALÓN AGARRE NEUTRO","P"],["JALÓN CON BANDA","C"]],
+ "Tracción horizontal (espalda)":[["REMO GIRONDA","P"],["REMO EN T","B"],["REMO EN PUNTA (REMO EN T)","B"],["REMO CON BARRA","B"],["REMO UNILATERAL MANCUERNA","M"],["REMO EN POLEA UNILATERAL","P"],["REMO INVERTIDO EN BARRA BAJA","C"]],
+ "Sentadilla (cuádriceps)":[["SENTADILLA LIBRE","B"],["SENTADILLA SUMO","B"],["SENTADILLA GOBLET CON MANCUERNA","M"],["PRENSA","P"],["SENTADILLA HACK","P"],["SENTADILLA BULGARA EN MULTIPOWER","B"],["SENTADILLA BÚLGARA CON MANCUERNAS","M"],["ZANCADA CON MANCUERNAS","M"],["SENTADILLA A UNA PIERNA ASISTIDA","C"]],
+ "Extensión de rodilla":[["EXTENSION DE CUADRICEPS","P"],["SENTADILLA SISSY","C"],["ZANCADA CORTA CON MANCUERNAS","M"],["SENTADILLA GOBLET ALTA","M"]],
+ "Bisagra de cadera (femoral)":[["PESO MUERTO","B"],["PESO MUERTO CON MANCUERNAS","M"],["PESO MUERTO MANCUERNAS 1 PIERNA","M"],["PESO MUERTO RUMANO CON BARRA","B"],["PESO MUERTO RUMANO EN MÁQUINA","P"],["HIP THRUST","B"],["BUENOS DÍAS","B"],["PUENTE DE GLÚTEO","C"]],
+ "Flexión de rodilla (femoral)":[["CURL FEMORAL EN MAQUINA (sentado, tumbado)","P"],["CURL FEMORAL EN MÁQUINA","P"],["CURL FEMORAL EN MAQUINA 1 PIERNA","P"],["PESO MUERTO RUMANO CON MANCUERNAS","M"],["CURL NÓRDICO ASISTIDO","C"],["CURL FEMORAL CON BANDA","C"]],
+ "Aductor / cadera":[["ADDUCTOR EN MAQUINA","P"],["SENTADILLA SUMO CON MANCUERNA","M"],["ZANCADA LATERAL","C"],["PUENTE CON BANDA","C"]],
+ "Gemelo":[["GEMELOS DE PIES (SMITH)","B"],["GEMELOS DE PIE (SMITH)","B"],["GEMELOS CON MANCUERNA A 1 PIERNA","M"],["GEMELOS EN MÁQUINA / PRENSA","P"],["GEMELOS EN ESCALÓN","C"]],
+ "Core":[["CIRCUITO ABS","C"],["PLANCHA + PLANCHA LATERAL","C"],["RUEDA ABDOMINAL","C"],["CRUNCH EN POLEA","P"]]
 };
 var EQNOM={B:"Barra",M:"Mancuernas",P:"Máquina o polea",C:"Peso corporal"};
+function norm(x){return (x||"").toString().toUpperCase()
+  .replace(/[ÁÀÄÂ]/g,"A").replace(/[ÉÈËÊ]/g,"E").replace(/[ÍÌÏÎ]/g,"I")
+  .replace(/[ÓÒÖÔ]/g,"O").replace(/[ÚÙÜÛ]/g,"U").replace(/Ñ/g,"N")
+  .replace(/[^A-Z0-9]/g,"")}
+var IDX_PATRON={};
+Object.keys(PATRONES).forEach(function(g){PATRONES[g].forEach(function(a){IDX_PATRON[norm(a[0])]=g})});
+function patronDe(n){return IDX_PATRON[norm(n)]||null}
 function alternativas(nombre){
-  return ALTS[nombre]||[[nombre,"B"]];
+  var g=patronDe(nombre);
+  if(g)return PATRONES[g];
+  return [[nombre,"B"]];
 }
-
 /* ============ CRONÓMETRO DE DESCANSO ============ */
 var Tmr={id:null,left:0};
 function pintaTimer(){
@@ -955,9 +950,11 @@ function renderPRs(){
 
 function abreCambio(ei){
   var base=bloque().ses[curSes].ex[ei][0],actual=nombreEj(base,ei);
-  var lista=alternativas(base);
+  var lista=alternativas(actual);
+  if(lista.length<2)lista=alternativas(base);
+  var g=patronDe(actual)||patronDe(base);
   $("p-title").innerHTML="⇄ Cambiar ejercicio";
-  var h='<p class="lead">Mismo patrón de movimiento y mismo músculo, con el material que tengas libre. Cada variante guarda su propio historial de pesos.</p>';
+  var h='<p class="lead">'+(g?'<b style="color:var(--iron)">'+g+'</b><br>':'')+'Mismo patrón de movimiento y mismo músculo, con el material que tengas libre. Cada variante guarda su propio historial de pesos.</p>';
   lista.forEach(function(a,i){
     var sel=(a[0]===actual);
     h+='<label class="opt"><input type="radio" name="alt" data-n="'+a[0].replace(/"/g,"&quot;")+'"'+(sel?" checked":"")+'>'+
@@ -991,27 +988,50 @@ function renderComida(){
   var dg=diaGen(b,curTipo),tp=dg.tipo,md=dg.macros;
   var html='<p class="lead" style="margin:-4px 0 14px">'+tp.dias+' · objetivo <b style="color:var(--ink)">'+md.kcal+' kcal</b> (P'+md.P+' C'+md.C+' G'+md.G+') · elegido <b style="color:var(--ink)">'+kcalDia(curTipo)+' kcal</b></p>';
   dg.comidas.forEach(function(m,mi){
-    var sel=getOpt(b,tp.k,mi),isFree=m.libre;
-    var selK=isFree?null:m.o[sel].k;
-    html+='<div class="meal"><div class="t"><span>'+m.n+'</span><span class="kc">'+(isFree?"libre":selK+" kcal")+'</span></div>';
-    m.o.forEach(function(o,oi){
-      html+='<label class="opt"><input type="radio" name="m'+tp.k+mi+'" data-t="'+tp.k+'" data-m="'+mi+'" data-o="'+oi+'"'+(oi===sel?" checked":"")+'>'+
-        '<span class="ot"><b style="color:var(--fresh)">'+o.n+'</b>'+(o.m?' <span style="font:600 9.5px var(--mono);color:var(--faint);border:1px solid var(--line);padding:2px 6px;border-radius:20px;white-space:nowrap">'+o.m+'</span>':'')+
-        '<br>'+o.t+
-        (isFree?'':'<br><span style="font:600 10.5px var(--mono);color:var(--faint)">P'+o.mac[0]+' · C'+o.mac[1]+' · G'+o.mac[2]+'</span>')+
-        '</span><span class="ok">'+(isFree?"—":o.k+" kcal")+'</span></label>';
-      if(oi===sel&&o.pasos&&o.pasos.length&&!isFree){
-        html+='<details style="margin:2px 0 8px"><summary>Cómo se hace ('+o.m+')</summary><div class="dbody"><ol style="margin:0;padding-left:18px">'+
-          o.pasos.map(function(x){return '<li style="margin:5px 0">'+x+'</li>'}).join("")+'</ol></div></details>';
-      }
-    });
-    html+='</div>';
+    var sel=getOpt(b,tp.k,mi),isFree=m.libre,o=m.o[sel]||m.o[0];
+    if(isFree){
+      html+='<div class="meal" style="border-left-color:var(--plum)"><div class="t" style="color:var(--plum)"><span>'+m.n+'</span><span class="kc">libre</span></div>'+
+        '<p style="margin:6px 0 0;font-size:14px">Tu comida libre de la semana. Come lo que te apetezca sin llevar la cuenta.</p></div>';
+      return;
+    }
+    html+='<div class="meal">'+
+      '<div class="t"><span>'+m.n+'</span><span class="kc">'+o.k+' kcal</span></div>'+
+      '<div style="background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px">'+
+        '<div style="display:flex;align-items:flex-start;gap:10px">'+
+          '<div style="flex:1"><div style="font-size:15px;font-weight:800">'+o.n+'</div>'+
+          '<div style="font:600 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-top:3px">'+o.m+' · P'+o.mac[0]+' · C'+o.mac[1]+' · G'+o.mac[2]+'</div></div>'+
+          '<button type="button" class="chg" data-m="'+mi+'" style="background:var(--panel2);border:1px solid var(--line);color:var(--ink);font:700 11.5px var(--sans);padding:8px 10px;border-radius:9px;cursor:pointer;white-space:nowrap">⇄ '+m.o.length+'</button>'+
+        '</div>'+
+        '<p style="margin:10px 0 0;font-size:14px">'+o.t+'</p>'+
+        (o.pasos&&o.pasos.length?'<details style="margin:8px 0 0"><summary>Cómo se hace</summary><div class="dbody"><ol style="margin:0;padding-left:18px">'+o.pasos.map(function(x){return '<li style="margin:5px 0">'+x+'</li>'}).join("")+'</ol></div></details>':'')+
+      '</div></div>';
   });
   $("daytype-body").innerHTML=html;
-  Array.prototype.forEach.call($("daytype-body").querySelectorAll("input[type=radio]"),function(r){
-    r.addEventListener("change",function(){setOpt(b,r.getAttribute("data-t"),parseInt(r.getAttribute("data-m"),10),parseInt(r.getAttribute("data-o"),10));
-      renderComida();renderBasket();renderHoy();renderPlan()})});
+  Array.prototype.forEach.call($("daytype-body").querySelectorAll("button.chg"),function(bt){
+    bt.addEventListener("click",function(){abreOpcion(parseInt(bt.getAttribute("data-m"),10))})});
   $("notas").innerHTML='<ul style="margin:0;padding-left:18px;font-size:13.5px;color:var(--muted)">'+NOTAS.map(function(x){return '<li style="margin:5px 0">'+x+'</li>'}).join("")+'</ul>';
+}
+
+function abreOpcion(mi){
+  var b=P.bloque,dg=diaGen(b,curTipo),tp=dg.tipo,m=dg.comidas[mi],sel=getOpt(b,tp.k,mi);
+  $("p-title").innerHTML="⇄ "+m.n+" · "+tp.n;
+  var h='<p class="lead">Todas cuadran con las mismas calorías. Elige por lo que te apetezca o por el aparato que quieras usar.</p>';
+  m.o.forEach(function(o,oi){
+    h+='<label class="opt"><input type="radio" name="opc"'+(oi===sel?" checked":"")+' data-o="'+oi+'">'+
+      '<span class="ot"><b>'+o.n+'</b> <span style="font:600 9.5px var(--mono);color:var(--faint);border:1px solid var(--line);padding:2px 6px;border-radius:20px;white-space:nowrap">'+o.m+'</span>'+
+      '<br><span style="color:var(--muted);font-size:12.5px">'+o.t+'</span>'+
+      '<br><span style="font:600 10.5px var(--mono);color:var(--faint)">P'+o.mac[0]+' · C'+o.mac[1]+' · G'+o.mac[2]+'</span></span>'+
+      '<span class="ok">'+o.k+'</span></label>';
+  });
+  h+='<button class="btn primary full" id="opc-save" style="margin-top:14px">Usar esta comida</button>';
+  $("p-body").innerHTML=h;
+  $("opc-save").addEventListener("click",function(){
+    var r=$("p-body").querySelector("input[name=opc]:checked");
+    if(r)setOpt(b,tp.k,mi,parseInt(r.getAttribute("data-o"),10));
+    $("pmodal").classList.remove("on");
+    renderComida();renderBasket();renderHoy();renderPlan();
+  });
+  $("pmodal").classList.add("on");
 }
 
 /* ============ PRECIOS ============ */
@@ -1092,13 +1112,13 @@ function renderBasket(){
   } else {
     var pc=Math.round(cr.ratio*100),falta=cr.prev-cr.com;
     var txt,cls;
-    if(pc>=95){txt="Cumpliste <b>"+pc+"%</b> de las comidas ("+cr.com+" de "+cr.prev+"). Compra la cantidad completa.";cls="g"}
-    else if(pc>=80){txt="Cumpliste <b>"+pc+"%</b>: te saltaste "+falta+" comida(s). Puedes comprar un poco menos o te sobrará algo.";cls=""}
-    else {txt="Cumpliste solo <b>"+pc+"%</b> ("+falta+" comidas sin hacer). Si compras la lista completa, va a sobrar comida. Mejor ajusta.";cls=""}
+    if(pc>=95){txt="La semana pasada marcaste <b>"+cr.com+" de las "+cr.prev+" comidas</b> del plan. Compra la cantidad completa.";cls="g"}
+    else if(pc>=80){txt="La semana pasada marcaste <b>"+cr.com+" de las "+cr.prev+" comidas</b> del plan ("+falta+" sin hacer). Puedes comprar un poco menos o te sobrará algo.";cls=""}
+    else {txt="La semana pasada solo marcaste <b>"+cr.com+" de las "+cr.prev+" comidas</b> del plan. Si compras la lista entera, va a sobrar comida.";cls=""}
     $("adj-box").innerHTML='<div class="note '+cls+'" style="margin-bottom:12px">'+txt+
       '<div style="margin-top:10px"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13.5px">'+
       '<input type="checkbox" id="adj-tg"'+(P.ajustar?" checked":"")+' style="width:20px;height:20px">'+
-      '<span>Ajustar cantidades a mi consumo real (×'+cr.ratio.toFixed(2)+')</span></label></div></div>';
+      '<span>Comprar solo el '+pc+"% (ajustar a lo que comes de verdad)"+'</span></label></div></div>';
     $("adj-tg").addEventListener("change",function(){P.ajustar=$("adj-tg").checked;saveP();renderBasket()});
   }
   updateBar();
@@ -1299,6 +1319,9 @@ function renderHoy(){
 $("h-xadd").addEventListener("click",function(){var n=$("h-xn").value.trim(),k=parseInt($("h-xk").value,10);
   if(!n||!k){$("h-xn").focus();return}rec(dkey()).extras.push({n:n,k:k});saveDaily();$("h-xn").value="";$("h-xk").value="";renderHoy()});
 $("h-bsave").addEventListener("click",function(){rec(dkey()).burn=parseInt($("h-burn").value,10)||null;saveDaily();renderHoy()});
+(function(){var dt=$("h-extras-box");
+  if(LS.get("pf5_extras")==="1")dt.open=true;
+  dt.addEventListener("toggle",function(){LS.set("pf5_extras",dt.open?"1":"0")});})();
 $("h-pasos-save").addEventListener("click",function(){rec(dkey()).pasos=parseInt($("h-pasos").value,10)||null;saveDaily();renderHoy()});
 $("h-ayer").addEventListener("click",function(){
   var hoy=dkey(),d=new Date();d.setDate(d.getDate()-1);var ay=dkey(d),ra=DAILY[ay];
@@ -1472,9 +1495,10 @@ function renderDatos(){
   }
   Object.keys(LOGS).forEach(function(n){dTrain+=LOGS[n].length});
   var pcCom=prev?Math.round(com/prev*100):0;
-  var ha='<div class="pr"><span class="nm">Comidas cumplidas (28 días)</span><span class="v">'+pcCom+'%</span></div>';
-  ha+='<div class="pr"><span class="nm">Ejercicios registrados</span><span class="v">'+dTrain+'</span></div>';
-  if(kcalDias)ha+='<div class="pr"><span class="nm">Media comida (días con registro)</span><span class="v">'+Math.round(kcalSum/kcalDias)+' kcal</span></div>';
+  var ha='<div class="pr"><span class="nm">Comidas marcadas en 28 días</span><span class="v">'+com+' de '+prev+'</span></div>'+
+    '<div class="pr"><span class="nm">Eso es un</span><span class="v">'+pcCom+'% del plan</span></div>';
+  ha+='<div class="pr"><span class="nm">Sesiones de ejercicio guardadas</span><span class="v">'+dTrain+'</span></div>';
+  if(kcalDias)ha+='<div class="pr"><span class="nm">Media de lo que comes al día</span><span class="v">'+Math.round(kcalSum/kcalDias)+' kcal</span></div>';
   ha+='<div class="pr"><span class="nm">Objetivo diario</span><span class="v">'+kcalObjetivo()+' kcal</span></div>';
   $("d-adh").innerHTML=ha;
   // --- volumen por grupo
