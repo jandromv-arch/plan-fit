@@ -459,12 +459,12 @@ var ABR={"Empujes":"Emp","Pierna":"Pier","Tracciones":"Trac","Torso":"Torso","Pi
 var F={
  huevo:[78,6.5,.6,5.5,"u","Lácteos y huevos","Huevos","huevos"],
  claras:[.48,.11,.007,.002,"ml","Lácteos y huevos","Claras de huevo","de claras"],
- yogur:[.40,.06,.04,.001,"ml","Lácteos y huevos","Yogur 0% sin lactosa","de yogur 0%"],
+ yogur:[.63,.10,.04,.002,"ml","Lácteos y huevos","Yogur proteico 0%","de yogur proteico"],
  queso:[3.0,.25,.02,.22,"g","Lácteos y huevos","Queso sin lactosa","de queso sin lactosa"],
  requeson:[.97,.12,.03,.04,"g","Lácteos y huevos","Requesón","de requesón"],
  pollo:[1.1,.23,0,.02,"g","Carnicería y pescadería","Pechuga de pollo","de pollo"],
  pavo:[1.05,.22,0,.01,"g","Carnicería y pescadería","Pechuga de pavo","de pavo"],
- ternera:[1.3,.21,0,.05,"g","Carnicería y pescadería","Ternera magra","de ternera magra"],
+ ternera:[1.75,.195,0,.11,"g","Carnicería y pescadería","Ternera picada magra o filete","de ternera"],
  cerdo:[1.3,.21,0,.05,"g","Carnicería y pescadería","Lomo de cerdo","de lomo de cerdo"],
  merluza:[.85,.18,0,.02,"g","Carnicería y pescadería","Merluza","de merluza"],
  salmon:[2.0,.20,0,.13,"g","Carnicería y pescadería","Salmón","de salmón"],
@@ -475,7 +475,7 @@ var F={
  arroz:[3.55,.07,.78,.01,"g","Cereales y pan","Arroz","de arroz (en crudo)"],
  pasta:[3.6,.12,.72,.015,"g","Cereales y pan","Pasta integral","de pasta (en crudo)"],
  avena:[3.8,.13,.6,.07,"g","Cereales y pan","Avena","de avena"],
- rebanada:[70,2.5,12,1,"u","Cereales y pan","Pan integral de molde","rebanadas de pan integral"],
+ rebanada:[80,3,13,1.2,"u","Cereales y pan","Pan integral de molde","rebanadas de pan integral"],
  tortaarroz:[28,.6,5.8,.2,"u","Cereales y pan","Tortas de arroz","tortas de arroz"],
  tacomaiz:[90,2,17,1.5,"u","Cereales y pan","Tortillas de maíz","tortillas de maíz"],
  fajita:[140,3.5,24,3,"u","Cereales y pan","Fajitas integrales","fajitas"],
@@ -501,8 +501,57 @@ var ICON={huevo:"🥚",claras:"🥚",yogur:"🥛",queso:"🧀",requeson:"🧀",p
  fruta:"🍎",frutosrojos:"🫐",aguacate:"🥑",aove:"🫒",almendras:"🥜",cacahuete:"🥜",
  tofu:"🧊",lentejas:"🫘",garbanzos:"🫘",quinoa:"🌾",verdura:"🥦",ensalada:"🥗",tomatetrit:"🍅",pudding:"🍮",ketchup:"🧂"};
 function iconOf(k){return ICON[k]||"🛒"}
-function kcalOf(ing){var t=0;ing.forEach(function(p){var f=F[p[0]];if(f)t+=f[0]*p[1]});return Math.round(t)}
-function macroOf(ing){var t=[0,0,0];ing.forEach(function(p){var f=F[p[0]];if(f){t[0]+=f[1]*p[1];t[1]+=f[2]*p[1];t[2]+=f[3]*p[1]}});return[Math.round(t[0]),Math.round(t[1]),Math.round(t[2])]}
+/* Alimentos frescos: el mismo pollo es el mismo pollo en cualquier cadena.
+   Aquí el supermercado no cambia nada, así que no se pregunta por cadena. */
+var FRESCO={pollo:1,pavo:1,ternera:1,cerdo:1,merluza:1,salmon:1,huevo:1,patata:1,boniato:1,
+ fruta:1,frutosrojos:1,aguacate:1,verdura:1,ensalada:1,arroz:1,pasta:1,avena:1,quinoa:1,aove:1,almendras:1};
+/* Valores de marca propia verificados (por 100 g/ml, o por unidad si el alimento va en unidades) */
+var SEED={
+ mercadona:{
+  yogur:{kcal:63,p:10,c:4,g:0.2},        /* Hacendado +Proteínas natural 0% */
+  rebanada:{kcal:79,p:4,c:12,g:1},       /* Pan 100% integral, rebanada de 32 g */
+  requeson:{kcal:97,p:12,c:3,g:4}
+ }
+};
+var FOODOVR={};(function(){var r=LS.get("pf5_foodovr");if(!r)return;
+  try{var o=JSON.parse(r);
+    // migración del formato antiguo (plano) al nuevo (por supermercado)
+    var plano=Object.keys(o).some(function(k){return o[k]&&o[k].kcal!=null});
+    FOODOVR=plano?{global:o}:o;
+  }catch(e){FOODOVR={}}})();
+function saveOvr(){LS.set("pf5_foodovr",JSON.stringify(FOODOVR))}
+function ovrDe(k){
+  var sup=P.superm||"mercadona";
+  if(FRESCO[k])return (FOODOVR.global&&FOODOVR.global[k])||null;
+  if(FOODOVR[sup]&&FOODOVR[sup][k])return FOODOVR[sup][k];
+  if(FOODOVR.global&&FOODOVR.global[k])return FOODOVR.global[k];
+  if(SEED[sup]&&SEED[sup][k])return SEED[sup][k];
+  return null;
+}
+function guardaOvr(k,o){
+  var sup=FRESCO[k]?"global":(P.superm||"mercadona");
+  FOODOVR[sup]=FOODOVR[sup]||{};FOODOVR[sup][k]=o;saveOvr();
+}
+function borraOvr(k){
+  var sup=FRESCO[k]?"global":(P.superm||"mercadona");
+  if(FOODOVR[sup])delete FOODOVR[sup][k];
+  if(FOODOVR.global&&FRESCO[k])delete FOODOVR.global[k];
+  saveOvr();
+}
+function tieneOvrPropio(k){
+  var sup=FRESCO[k]?"global":(P.superm||"mercadona");
+  return !!(FOODOVR[sup]&&FOODOVR[sup][k]);
+}
+/* valores efectivos: los tuyos si los has corregido, si no los de la tabla */
+function val(k){
+  var f=F[k];if(!f)return null;
+  var o=ovrDe(k);
+  if(!o)return f;
+  var u=f[4],div=(u==="u")?1:100;  // los tuyos van por 100 g/ml, o por unidad
+  return [o.kcal/div,o.p/div,o.c/div,o.g/div,f[4],f[5],f[6],f[7]];
+}
+function kcalOf(ing){var t=0;ing.forEach(function(p){var f=val(p[0]);if(f)t+=f[0]*p[1]});return Math.round(t)}
+function macroOf(ing){var t=[0,0,0];ing.forEach(function(p){var f=val(p[0]);if(f){t[0]+=f[1]*p[1];t[1]+=f[2]*p[1];t[2]+=f[3]*p[1]}});return[Math.round(t[0]),Math.round(t[1]),Math.round(t[2])]}
 
 /* Etiquetas para restricciones */
 var TAGS={yogur:["lactosa"],queso:["lactosa"],requeson:["lactosa"],
@@ -667,17 +716,17 @@ function construyeComida(tpl,tg){
   var sp=null,sc=null,sf=null;
   tpl.slots.forEach(function(s){if(s.role==="prot")sp=s;if(s.role==="carb")sc=s;if(s.role==="fat")sf=s});
   var iP=-1,iC=-1,iF=-1;
-  if(sp){var f=F[sp.k],q=Math.min(tope(sp.k),redondea(f[4],Math.max(0,restP)/f[1]));
+  if(sp){var f=val(sp.k),q=Math.min(tope(sp.k),redondea(f[4],Math.max(0,restP)/f[1]));
     iP=ing.length;ing.push([sp.k,q]);restC-=f[2]*q;restG-=f[3]*q}
-  if(sf){var f2=F[sf.k],q2=Math.min(tope(sf.k),redondea(f2[4],Math.max(0,restG)/f2[3]));
+  if(sf){var f2=val(sf.k),q2=Math.min(tope(sf.k),redondea(f2[4],Math.max(0,restG)/f2[3]));
     iF=ing.length;ing.push([sf.k,q2]);restC-=f2[2]*q2}
-  if(sc){var f3=F[sc.k],q3=Math.min(tope(sc.k),redondea(f3[4],Math.max(0,restC)/f3[2]));
+  if(sc){var f3=val(sc.k),q3=Math.min(tope(sc.k),redondea(f3[4],Math.max(0,restC)/f3[2]));
     iC=ing.length;ing.push([sc.k,q3])}
   // --- ajuste fino: si sobran kcal baja la grasa; si faltan, sube el carbohidrato
   var objK=tg.P*4+tg.C*4+tg.G*9;
   function mueve(idx,dif){
     if(idx<0)return false;
-    var f=F[ing[idx][0]],paso=redondea(f[4],Math.abs(dif)/f[0]);
+    var f=val(ing[idx][0]),paso=redondea(f[4],Math.abs(dif)/f[0]);
     if(paso<=0)return false;
     var nv=ing[idx][1]+(dif>0?paso:-paso);
     nv=Math.max(0,Math.min(tope(ing[idx][0]),nv));
@@ -906,7 +955,7 @@ function tieneOptDia(k,mi){var r=DAILY[k];return !!(r&&r.opts&&r.opts[mi]!=null)
 function bloque(){return BLOQUES[P.bloque]}
 var _cache={};
 function limpiaCache(){_cache={};_sesCache={}}
-function diaGen(bi,ti){var k=[bi,ti,P.peso,P.alt,P.edad,P.sexo,P.act,P.obj,JSON.stringify(P.excl||{}),(P.noQuiero||[]).join(",")].join("_");
+function diaGen(bi,ti){var k=[bi,ti,P.peso,P.alt,P.edad,P.sexo,P.act,P.obj,JSON.stringify(P.excl||{}),(P.noQuiero||[]).join(","),P.superm,JSON.stringify(FOODOVR)].join("_");
   if(!_cache[k])_cache[k]=generaDia(bi,ti);return _cache[k]}
 function tipoIdx(wd){return BLOQUES_DIETA[P.bloque].map[wd]}
 function diaDeSemana(wd){return diaGen(P.bloque,tipoIdx(wd))}
@@ -959,7 +1008,7 @@ $("modal").addEventListener("click",function(e){if(e.target===$("modal"))$("moda
 $("save-profile").addEventListener("click",function(){
   P.peso=parseFloat($("f-peso").value)||0;P.alt=parseFloat($("f-alt").value)||0;P.edad=parseFloat($("f-edad").value)||0;
   P.sexo=$("f-sexo").value;P.bloque=parseInt($("f-bloque").value,10);P.sem=parseInt($("f-sem").value,10);
-  P.personas=parseInt($("f-personas").value,10)||1;P.superm=$("f-super").value;P.act=parseFloat($("f-act").value);P.obj=$("f-obj").value;P.pesoObj=parseFloat($("f-pobj").value)||null;P.descanso=parseInt($("f-desc").value,10)||75;P.compras=parseInt($("f-compras").value,10)||1;P.onboard=true;saveP();limpiaCache();
+  P.personas=parseInt($("f-personas").value,10)||1;P.superm=$("f-super").value;limpiaCache();P.act=parseFloat($("f-act").value);P.obj=$("f-obj").value;P.pesoObj=parseFloat($("f-pobj").value)||null;P.descanso=parseInt($("f-desc").value,10)||75;P.compras=parseInt($("f-compras").value,10)||1;P.onboard=true;saveP();limpiaCache();
   $("modal").classList.remove("on");renderAll()});
 
 /* ============ PLAN ============ */
@@ -1380,11 +1429,27 @@ function abreProducto(k,qty){
   var per=u==="u"?"por unidad":"por 100 "+(u==="ml"?"ml":"g");
   var mul=u==="u"?1:100;
   var mm=macroOf([[k,mul]]),kc=kcalOf([[k,mul]]);
+  var mio=!!ovrDe(k),propio=tieneOvrPropio(k),fresco=!!FRESCO[k];
   var h='<p class="lead">Necesitas <b style="color:var(--ink)">'+fmtQ(u,qty)+'</b> esta semana.</p>'+
-    '<div class="pr"><span class="nm">Energía ('+per+')</span><span class="v">'+kc+' kcal</span></div>'+
+    '<div class="pr"><span class="nm">Energía ('+per+')</span><span class="v">'+kc+' kcal'+(mio?' <span style="color:var(--fresh)">✎</span>':'')+'</span></div>'+
     '<div class="pr"><span class="nm">Proteína / carbos / grasa</span><span class="v">'+mm[0]+' / '+mm[1]+' / '+mm[2]+' g</span></div>';
   if(usos.length)h+='<p class="lead" style="margin:14px 0 6px"><b style="color:var(--fresh)">Lo usas en:</b> '+usos.join(" · ")+'</p>';
-  h+='<h2 class="sec">Precio '+unidadPrecio(u)+'</h2><p class="lead">Apúntalo una vez y se guarda. La app usará el más barato.</p>';
+  h+='<details style="margin-top:16px"><summary style="color:var(--iron)">✎ Corregir valores nutricionales</summary><div class="dbody">'+
+    '<p style="margin:0 0 10px">Copia lo que diga <b>tu envase</b> ('+per+').'+
+      (fresco
+        ? ' Este es un alimento <b>fresco</b>: el pollo o la patata son iguales en cualquier cadena, así que el valor se guarda para todos los supermercados. Lo que sí cambia es el corte o el % de grasa.'
+        : ' Se guarda para <b>'+(SUPERS[P.superm]||SUPERS.mercadona).n+'</b>, porque cada cadena vende su propia versión. Si cambias de súper en ⚙️, se usarán los valores de ese otro.')+'</p>'+
+    '<div class="grid2">'+
+      '<div class="field"><label>Kcal</label><input id="nv-kcal" type="number" inputmode="decimal" value="'+kc+'"></div>'+
+      '<div class="field"><label>Proteína (g)</label><input id="nv-p" type="number" inputmode="decimal" value="'+mm[0]+'"></div>'+
+      '<div class="field"><label>Carbohidratos (g)</label><input id="nv-c" type="number" inputmode="decimal" value="'+mm[1]+'"></div>'+
+      '<div class="field"><label>Grasas (g)</label><input id="nv-g" type="number" inputmode="decimal" value="'+mm[2]+'"></div>'+
+    '</div>'+
+    '<button class="btn iron full" id="nv-save">Guardar mis valores</button>'+
+    (propio?'<button class="btn full" id="nv-reset" style="margin-top:10px">Volver a los valores de la app</button>':'')+
+    '<p style="margin:10px 0 0;font-size:11.5px;color:var(--faint)">Al cambiarlos, la app recalcula los gramos de tus comidas para seguir cuadrando las calorías.</p>'+
+    '</div></details>'+
+    '<h2 class="sec">Precio '+unidadPrecio(u)+'</h2><p class="lead">Apúntalo una vez y se guarda. La app usará el más barato.</p>';
   Object.keys(SUPERS).forEach(function(sp){
     var v=(PRICES[k]&&PRICES[k][sp]!=null)?PRICES[k][sp]:"";
     h+='<div class="field"><label>'+SUPERS[sp].n+'</label><input type="number" step="0.01" inputmode="decimal" id="pz-'+sp+'" value="'+v+'" placeholder="0,00"></div>';
@@ -1392,6 +1457,17 @@ function abreProducto(k,qty){
   h+='<button class="btn primary full" id="pz-save">Guardar precios</button>'+
      '<a class="btn full" style="margin-top:10px;text-decoration:none" href="'+superU(d[6])+'" target="_blank" rel="noopener">Ver en '+(SUPERS[P.superm]||SUPERS.mercadona).n+' ↗</a>';
   $("p-body").innerHTML=h;
+  $("nv-save").addEventListener("click",function(){
+    var kc2=parseFloat(($("nv-kcal").value||"").replace(",",".")),
+        pp=parseFloat(($("nv-p").value||"").replace(",",".")),
+        cc=parseFloat(($("nv-c").value||"").replace(",",".")),
+        gg=parseFloat(($("nv-g").value||"").replace(",","."));
+    if(!kc2||kc2<=0){$("nv-kcal").focus();return}
+    guardaOvr(k,{kcal:kc2,p:pp||0,c:cc||0,g:gg||0});
+    limpiaCache();$("pmodal").classList.remove("on");renderAll();
+  });
+  if($("nv-reset"))$("nv-reset").addEventListener("click",function(){
+    borraOvr(k);limpiaCache();$("pmodal").classList.remove("on");renderAll()});
   $("pz-save").addEventListener("click",function(){
     PRICES[k]=PRICES[k]||{};
     Object.keys(SUPERS).forEach(function(sp){
@@ -1557,7 +1633,7 @@ $("c-save").addEventListener("click",function(){
 
 /* ============ COPIA DE SEGURIDAD ============ */
 function backupObj(){return{v:4,fecha:new Date().toISOString(),
-  profile:P,opts:OPTS,logs:LOGS,hist:HIST,imports:IMPORTS,daily:DAILY,compra:checked,prices:PRICES,subs:SUBS,optwd:OPTWD}}
+  profile:P,opts:OPTS,logs:LOGS,hist:HIST,imports:IMPORTS,daily:DAILY,compra:checked,prices:PRICES,subs:SUBS,optwd:OPTWD,foodovr:FOODOVR}}
 function backupStr(){return JSON.stringify(backupObj())}
 $("bk-copy").addEventListener("click",function(){
   var t=backupStr();
@@ -1593,6 +1669,7 @@ $("bk-restore").addEventListener("click",function(){
   if(d.prices){PRICES=d.prices;savePrices()}
   if(d.subs){SUBS=d.subs;saveSubs()}
   if(d.optwd){OPTWD=d.optwd;LS.set("pf5_optwd",JSON.stringify(OPTWD))}
+  if(d.foodovr){FOODOVR=d.foodovr;saveOvr()}
   $("bk-in").value="";fillP();renderAll();renderHist();
   $("bk-out").innerHTML='<div class="insight" style="margin-top:10px"><b>Restaurado.</b> Datos de la copia del '+((d.fecha||"").slice(0,10)||"?")+'.</div>';
 });
