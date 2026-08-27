@@ -8,7 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="Plan Fit">
 <meta name="theme-color" content="#14181F">
 <link rel="manifest" href="manifest.json">
-<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192-v2.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512-v2.png">
 <title>Plan Fit · Plan real 12 semanas</title>
 <style>
   :root{--bg:#14181F;--panel:#1C222B;--panel2:#232B36;--line:#2C333E;--ink:#F3F1EA;--muted:#98A2AE;--faint:#6B7480;
@@ -28,13 +29,15 @@
   .gear{background:var(--panel);border:1px solid var(--line);color:var(--ink);width:44px;height:44px;border-radius:12px;font-size:20px;cursor:pointer;flex:0 0 auto}
   nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(20,24,31,.92);backdrop-filter:saturate(160%) blur(14px);-webkit-backdrop-filter:saturate(160%) blur(14px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
   .tabs-inner{max-width:660px;margin:0 auto;display:flex}
-  .tab{flex:1;background:none;border:0;color:var(--faint);font:700 9.5px/1.1 var(--sans);text-transform:uppercase;padding:9px 1px 8px;cursor:pointer}
+  .tab{flex:1;background:none;border:0;color:var(--faint);font:700 8.8px/1.1 var(--sans);text-transform:uppercase;padding:9px 0 8px;cursor:pointer;min-width:0;overflow:hidden}
+  .tab .ic{font-size:18px}
   .tab .ic{display:block;font-size:19px;margin-bottom:4px;line-height:1}
   .tab[aria-selected="true"]{color:var(--ink)}
   #t-hoy[aria-selected="true"]{color:var(--fresh)}#t-entreno[aria-selected="true"]{color:var(--iron)}
   #t-comida[aria-selected="true"]{color:var(--fresh)}#t-compra[aria-selected="true"]{color:var(--sky)}
   #t-plan[aria-selected="true"]{color:var(--plum)}
   #t-datos[aria-selected="true"]{color:var(--ink)}
+  #t-agenda[aria-selected="true"]{color:var(--sky)}
   section[role="tabpanel"]{display:none;padding-top:14px}
   section[role="tabpanel"].on{display:block;animation:fade .22s ease}
   @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
@@ -118,6 +121,18 @@
   .phase .body .sub{font-size:12px;color:var(--muted);margin:2px 0 4px}
   .phase .body .wk{font:600 10px/1 var(--mono);color:var(--faint);text-transform:uppercase}
   .pill{display:inline-block;font:700 9.5px/1 var(--mono);padding:4px 7px;border-radius:20px;background:var(--plum-dim);color:var(--plum);margin-left:8px;vertical-align:middle;text-transform:uppercase}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+  .cal .hd{font:700 9.5px var(--mono);color:var(--faint);text-align:center;padding:2px 0 4px;text-transform:uppercase}
+  .cal .cd{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:5px 2px 4px;text-align:center;cursor:pointer;min-height:52px}
+  .cal .cd.vacio{background:none;border-color:transparent;cursor:default}
+  .cal .cd .n{font:700 12.5px var(--mono);color:var(--ink)}
+  .cal .cd .ic{font-size:11px;line-height:1.25;margin-top:1px}
+  .cal .cd .tp{font:600 7.5px var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.02em}
+  .cal .cd.hoy{border-color:var(--fresh);background:var(--fresh-dim)}
+  .cal .cd.hoy .n{color:var(--fresh)}
+  .cal .cd.sel{outline:2px solid var(--iron);outline-offset:1px}
+  .cal .cd.train{background:var(--iron-dim);border-color:rgba(245,181,74,.35)}
+  .cal .cd.fuera{opacity:.35}
   .wkgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin:6px 0 14px}
   .wkgrid .d{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 2px;text-align:center}
   .wkgrid .d .dn{font:700 9.5px var(--mono);color:var(--faint)}
@@ -170,17 +185,22 @@
       <div class="macro"><div class="lab">Balance</div><div class="val"><span id="h-net">—</span></div></div>
     </div>
     <div class="note g" id="h-verdict" style="margin-bottom:14px"></div>
-    <details id="h-extras-box"><summary style="color:var(--sky)">Agua y pasos</summary>
-    <div class="card" style="margin-top:8px"><div class="pad">
-      <p class="lead" style="margin:0 0 8px">Agua · objetivo 3 L (12 vasos de 250 ml)</p>
-      <div id="h-agua" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <h2 class="sec">Pasos</h2>
+    <div class="card"><div class="pad">
       <p class="lead" style="margin:0 0 8px" id="h-pasos-lab">Pasos</p>
-      <div class="bar" style="margin-bottom:10px"><i id="h-pasos-bar"></i></div>
-      <div class="field" style="margin:0"><input id="h-pasos" type="number" inputmode="numeric" placeholder="pasos de hoy"></div>
-      <button class="btn full" id="h-pasos-save" style="margin-top:10px">Guardar pasos</button>
+      <div class="bar" style="margin-bottom:12px"><i id="h-pasos-bar"></i></div>
+      <div class="field" style="margin:0"><label>Pasos de hoy</label><input id="h-pasos" type="number" inputmode="numeric" placeholder="ej. 12500"></div>
+      <button class="btn full" id="h-pasos-save" style="margin-top:6px">Guardar pasos</button>
+    </div></div>
+
+    <details id="h-extras-box"><summary style="color:var(--sky)">Agua del día</summary>
+    <div class="card" style="margin-top:8px"><div class="pad">
+      <p class="lead" style="margin:0 0 8px">Objetivo 3 L (12 vasos de 250 ml)</p>
+      <div id="h-agua" style="display:flex;gap:6px;flex-wrap:wrap"></div>
     </div></div></details>
 
     <h2 class="sec">Comidas de hoy</h2>
+    <p class="lead" style="margin:-6px 0 8px;font-size:12.5px">¿Te has ajustado a las raciones del plan? Esto solo corrige el recuento de hoy (±10%), no cambia el plan.</p>
     <div class="chips" id="h-racion" role="group" aria-label="Ración"></div>
     <p class="lead" id="h-mealhint">Marca lo que te has comido. Cambia de opción en la pestaña Comida.</p>
     <div id="h-meals"></div>
@@ -194,7 +214,7 @@
       <button class="btn full" id="h-ayer" style="margin-top:8px">⟲ Repetir lo de ayer</button>
       <div id="h-xlist" style="margin-top:10px"></div>
     </div></div>
-    <h2 class="sec">Gasto y pasos</h2>
+    <h2 class="sec">Gasto calórico</h2>
     <div class="card"><div class="pad">
       <p class="lead" style="margin:0 0 10px" id="h-src"></p>
       <div class="field"><label>Kcal gastadas hoy</label><input id="h-burn" type="number" inputmode="numeric" placeholder="ej. 2900"></div>
@@ -236,7 +256,22 @@
     <div class="chips" id="view-chips" role="group" aria-label="Vista"></div>
     <div class="progress"><div class="bar"><i id="bar"></i></div><span class="pct" id="pct">0%</span></div>
     <div id="shop"></div>
+
     <p class="lead" style="margin-top:14px;font-size:12.5px">Toca la <b>ⓘ</b> de cada producto para ver cuánto necesitas, en qué comidas lo usas, sus macros y apuntar su precio. Desde ahí también puedes abrir el súper si quieres ver la foto o la ficha.</p>
+  </section>
+
+  <!-- AGENDA -->
+  <section id="p-agenda" role="tabpanel">
+    <p class="eyebrow" id="agenda-eyebrow">Agenda</p>
+    <div class="chips" id="cal-vista" role="group" aria-label="Vista"></div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <button class="btn" id="cal-prev" style="padding:9px 13px;flex:0 0 auto">‹</button>
+      <div style="flex:1;text-align:center;font-weight:800;font-size:15px" id="cal-mes"></div>
+      <button class="btn" id="cal-next" style="padding:9px 13px;flex:0 0 auto">›</button>
+    </div>
+    <div id="cal-grid"></div>
+    <div id="cal-leyenda"></div>
+    <div id="cal-detalle"></div>
   </section>
 
   <!-- DATOS -->
@@ -265,6 +300,8 @@
   <section id="p-plan" role="tabpanel">
     <p class="eyebrow">Plan de 12 semanas</p>
     <div class="note p" id="plan-now" style="margin-bottom:14px"></div>
+
+
     <div class="card"><div class="pad" id="phases"></div></div>
     <h2 class="sec">Semana tipo</h2>
     <div class="wkgrid" id="week-grid"></div>
@@ -343,6 +380,7 @@
   <button class="tab" id="t-entreno" role="tab" aria-selected="false" aria-controls="p-entreno"><span class="ic">🏋️</span>Entreno</button>
   <button class="tab" id="t-comida" role="tab" aria-selected="false" aria-controls="p-comida"><span class="ic">🍽️</span>Comida</button>
   <button class="tab" id="t-compra" role="tab" aria-selected="false" aria-controls="p-compra"><span class="ic">🛒</span>Compra</button>
+  <button class="tab" id="t-agenda" role="tab" aria-selected="false" aria-controls="p-agenda"><span class="ic">📅</span>Agenda</button>
   <button class="tab" id="t-datos" role="tab" aria-selected="false" aria-controls="p-datos"><span class="ic">📊</span>Datos</button>
   <button class="tab" id="t-plan" role="tab" aria-selected="false" aria-controls="p-plan"><span class="ic">🗂</span>Plan</button>
 </div></nav>
@@ -747,13 +785,14 @@ function trainDays(){
 function sesionDeDia(wd){var td=trainDays(),i=td.indexOf(wd);if(i<0)return -1;return i%bloque().ses.length}
 
 /* ============ KCAL DEL DÍA SEGÚN OPCIONES ELEGIDAS ============ */
-function kcalDia(ti){var d=diaGen(P.bloque,ti),tp=d.tipo,t=0;
+function kcalDiaDe(b,ti){var d=diaGen(b,ti),tp=d.tipo,t=0;
   d.comidas.forEach(function(m,mi){if(m.libre)return;
-    var o=m.o[getOpt(P.bloque,tp.k,mi)]||m.o[0];t+=o.k});return t}
+    var o=m.o[getOpt(b,tp.k,mi)]||m.o[0];t+=o.k});return t}
+function kcalDia(ti){return kcalDiaDe(P.bloque,ti)}
 function mediaSemanal(){var t=0;for(var i=0;i<7;i++)t+=kcalDia(tipoIdx(i));return Math.round(t/7)}
 
 /* ============ TABS ============ */
-var TABS=[["t-hoy","p-hoy"],["t-entreno","p-entreno"],["t-comida","p-comida"],["t-compra","p-compra"],["t-datos","p-datos"],["t-plan","p-plan"]];
+var TABS=[["t-hoy","p-hoy"],["t-entreno","p-entreno"],["t-comida","p-comida"],["t-compra","p-compra"],["t-agenda","p-agenda"],["t-datos","p-datos"],["t-plan","p-plan"]];
 TABS.forEach(function(t){$(t[0]).addEventListener("click",function(){
   TABS.forEach(function(o){var s=o[0]===t[0];$(o[0]).setAttribute("aria-selected",s);$(o[1]).classList.toggle("on",s)});
   window.scrollTo({top:0,behavior:"smooth"})})});
@@ -1273,7 +1312,7 @@ function renderPasos(k){
 function renderRacion(k){
   var r=rec(k);r.racion=r.racion||1;
   var c=$("h-racion");c.innerHTML="";
-  [[0.9,"−10%"],[1,"Ración normal"],[1.1,"+10%"]].forEach(function(o){
+  [[0.9,"Comí menos"],[1,"Ración normal"],[1.1,"Comí más"]].forEach(function(o){
     var b=document.createElement("button");b.className="chip";b.textContent=o[1];
     b.setAttribute("aria-pressed",Math.abs(r.racion-o[0])<0.01);
     b.addEventListener("click",function(){r.racion=o[0];saveDaily();renderHoy()});
@@ -1424,6 +1463,130 @@ $("bk-restore").addEventListener("click",function(){
   $("bk-out").innerHTML='<div class="insight" style="margin-top:10px"><b>Restaurado.</b> Datos de la copia del '+((d.fecha||"").slice(0,10)||"?")+'.</div>';
 });
 
+/* ============ CALENDARIO ============ */
+function lunesDe(d){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  var w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x}
+function inicioPlan(){
+  // el lunes de esta semana menos las semanas ya transcurridas del plan
+  var l=lunesDe(new Date());l.setDate(l.getDate()-(P.bloque*4+P.sem)*7);return l;
+}
+function situacion(fecha){
+  var w=Math.round((lunesDe(fecha)-inicioPlan())/604800000);
+  if(w<0)return{fuera:"antes"};
+  if(w>11)return{fuera:"despues",w:w};
+  return{w:w,bloque:Math.floor(w/4),sem:w%4};
+}
+var CAL_MES=new Date(),CAL_SEL=null,CAL_VISTA="mes",CAL_LUNES=lunesDe(new Date());
+function renderCalVista(){
+  var c=$("cal-vista");c.innerHTML="";
+  [["mes","Vista mensual"],["semana","Vista semanal"]].forEach(function(v){
+    var b=document.createElement("button");b.className="chip";b.textContent=v[1];
+    b.setAttribute("aria-pressed",CAL_VISTA===v[0]);
+    b.addEventListener("click",function(){CAL_VISTA=v[0];renderCalendario()});c.appendChild(b)});
+}
+function infoDia(f){
+  var wd=(f.getDay()+6)%7,st=situacion(f);
+  if(st.fuera)return{fuera:st.fuera,wd:wd};
+  var b=st.bloque,ti=BLOQUES_DIETA[b].map[wd],dg=diaGen(b,ti);
+  var td=trainDays(),si=td.indexOf(wd)>-1?td.indexOf(wd)%BLOQUES[b].ses.length:-1;
+  return{wd:wd,bloque:b,sem:st.sem,ti:ti,dg:dg,tipo:dg.tipo,si:si,ses:si>-1?BLOQUES[b].ses[si]:null,kcal:kcalDiaDe(b,ti)};
+}
+function renderCalendario(){
+  renderCalVista();
+  if(CAL_VISTA==="semana")return renderSemana();
+  $("cal-detalle").innerHTML="";
+  var y=CAL_MES.getFullYear(),m=CAL_MES.getMonth();
+  $("agenda-eyebrow").textContent="Agenda · vista mensual";
+  $("cal-mes").textContent=CAL_MES.toLocaleDateString("es-ES",{month:"long",year:"numeric"});
+  var primero=new Date(y,m,1),dias=new Date(y,m+1,0).getDate();
+  var offset=(primero.getDay()+6)%7,hoyK=dkey();
+  var h='<div class="cal">'+DIAS.map(function(d){return '<div class="hd">'+d+'</div>'}).join("");
+  for(var i=0;i<offset;i++)h+='<div class="cd vacio"></div>';
+  for(var d=1;d<=dias;d++){
+    var f=new Date(y,m,d),k=dkey(f),inf=infoDia(f);
+    var cls="cd",ic="·",tp="";
+    if(inf.fuera){cls+=" fuera";tp=inf.fuera==="antes"?"—":"fin"}
+    else{tp=ABR[inf.tipo.n]||inf.tipo.n.slice(0,5);
+      if(inf.si>-1){cls+=" train";ic="🏋️"}else ic="🚶"}
+    if(k===hoyK)cls+=" hoy";
+    if(CAL_SEL===k)cls+=" sel";
+    h+='<div class="'+cls+'" data-k="'+k+'"><div class="n">'+d+'</div><div class="ic">'+ic+'</div><div class="tp">'+tp+'</div></div>';
+  }
+  h+='</div>';
+  $("cal-grid").innerHTML=h;
+  $("cal-leyenda").innerHTML='<p class="lead" style="margin:12px 0 0;font-size:12px">🏋️ gimnasio · 🚶 solo pasos · borde verde: hoy. Toca un día para ver el detalle, incluso de bloques futuros.</p>';
+  Array.prototype.forEach.call($("cal-grid").querySelectorAll(".cd[data-k]"),function(c){
+    c.addEventListener("click",function(){CAL_SEL=c.getAttribute("data-k");renderCalendario();renderDetalleDia()})});
+  renderDetalleDia();
+}
+function renderSemana(){
+  $("agenda-eyebrow").textContent="Agenda · vista semanal";
+  var fin=new Date(CAL_LUNES);fin.setDate(fin.getDate()+6);
+  var st=situacion(CAL_LUNES);
+  $("cal-mes").innerHTML=CAL_LUNES.getDate()+" "+CAL_LUNES.toLocaleDateString("es-ES",{month:"short"})+" – "+fin.getDate()+" "+fin.toLocaleDateString("es-ES",{month:"short"})+
+    (st.fuera?"":'<br><span style="font:600 10px var(--mono);color:var(--faint);text-transform:uppercase">Bloque '+(st.bloque+1)+" · semana "+(st.sem+1)+" de 4</span>");
+  $("cal-leyenda").innerHTML="";$("cal-detalle").innerHTML="";
+  var hoyK=dkey(),h="";
+  for(var i=0;i<7;i++){
+    var f=new Date(CAL_LUNES);f.setDate(f.getDate()+i);
+    var k=dkey(f),inf=infoDia(f),es=(k===hoyK);
+    h+='<div class="card" style="margin-bottom:10px'+(es?';border-color:var(--fresh)':'')+'"><div class="pad" style="padding:13px 15px">'+
+      '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:'+(inf.fuera?"0":"10px")+'">'+
+        '<span style="font-size:15px;font-weight:800'+(es?';color:var(--fresh)':'')+'">'+DIAS[i]+' '+f.getDate()+'</span>'+
+        (es?'<span class="pill" style="background:var(--fresh-dim);color:var(--fresh)">Hoy</span>':'')+
+        (inf.fuera?'<span class="lead" style="margin:0">'+(inf.fuera==="antes"?"antes del plan":"fuera del plan")+'</span>':
+         '<span style="margin-left:auto;font:600 10px var(--mono);text-transform:uppercase;color:var(--muted)">'+inf.tipo.n+' · '+inf.kcal+' kcal</span>')+
+      '</div>';
+    if(!inf.fuera){
+      h+= inf.si>-1
+        ? '<div style="font-size:13.5px;margin-bottom:8px"><b style="color:var(--iron)">🏋️ '+inf.ses.n+'</b> <span style="color:var(--faint)">· '+inf.ses.ex.length+' ejercicios</span></div>'
+        : '<div style="font-size:13.5px;margin-bottom:8px;color:var(--muted)">🚶 Sin gimnasio · '+pasosObjetivo().toLocaleString("es-ES")+' pasos</div>';
+      inf.dg.comidas.forEach(function(m,mi){
+        if(m.libre){h+='<div style="font-size:12.5px;color:var(--plum)">· '+m.n+': libre</div>';return}
+        var o=m.o[getOpt(inf.bloque,inf.tipo.k,mi)]||m.o[0];
+        h+='<div style="font-size:12.5px;color:var(--muted)">· '+m.n+': <span style="color:var(--ink)">'+o.n+'</span> ('+o.m+', '+o.k+' kcal)</div>';
+      });
+    }
+    h+='</div></div>';
+  }
+  $("cal-grid").innerHTML=h;
+}
+function renderDetalleDia(){
+  if(!CAL_SEL){$("cal-detalle").innerHTML="";return}
+  var pr=CAL_SEL.split("-"),f=new Date(+pr[0],+pr[1]-1,+pr[2]);
+  var inf=infoDia(f);
+  var titulo=f.toLocaleDateString("es-ES",{weekday:"long",day:"numeric",month:"long"});
+  if(inf.fuera){
+    $("cal-detalle").innerHTML='<div class="note" style="margin-top:14px"><b style="text-transform:capitalize">'+titulo+'</b><br>'+
+      (inf.fuera==="antes"?"Antes de empezar el plan.":"Ya fuera de las 12 semanas: toca repetir ciclo o pedir una pauta nueva.")+'</div>';
+    return;
+  }
+  var esOtro=(inf.bloque!==P.bloque);
+  var h='<div class="card" style="margin-top:14px"><div class="pad">'+
+    '<div style="font-size:16px;font-weight:800;text-transform:capitalize">'+titulo+'</div>'+
+    '<div class="lead" style="margin:4px 0 12px">Bloque '+(inf.bloque+1)+' · '+BLOQUES[inf.bloque].wk.toLowerCase()+' · semana '+(inf.sem+1)+' de 4'+(esOtro?' <b style="color:var(--plum)">(otro bloque)</b>':'')+'</div>';
+  if(inf.si>-1){
+    h+='<div class="note" style="margin-bottom:12px"><b>🏋️ '+inf.ses.n+'</b> · '+inf.ses.sub+'<br>'+
+      inf.ses.ex.map(function(e){return e[0].toLowerCase()+" ("+e[1]+"×"+e[2]+")"}).join(" · ")+'</div>';
+  } else h+='<div class="note s" style="margin-bottom:12px"><b>🚶 Sin gimnasio.</b> Objetivo de pasos: '+pasosObjetivo().toLocaleString("es-ES")+'.</div>';
+  h+='<div style="font:600 10px var(--mono);text-transform:uppercase;color:var(--faint);margin-bottom:6px">Día '+inf.tipo.n+' · '+inf.kcal+' kcal</div>';
+  inf.dg.comidas.forEach(function(m,mi){
+    if(m.libre){h+='<div class="pr"><span class="nm">'+m.n+'</span><span class="v" style="color:var(--plum)">libre</span></div>';return}
+    var o=m.o[getOpt(inf.bloque,inf.tipo.k,mi)]||m.o[0];
+    h+='<div class="pr"><span class="nm">'+m.n+'<br><span style="font-size:11.5px;color:var(--faint)">'+o.n+' · '+o.m+'</span></span><span class="v">'+o.k+'</span></div>';
+  });
+  if(esOtro)h+='<p class="lead" style="margin:12px 0 0;font-size:12.5px">Así te quedará la comida en ese bloque. Para cambiar las opciones, selecciona ese bloque en ⚙️ y ve a Comida.</p>';
+  h+='</div></div>';
+  $("cal-detalle").innerHTML=h;
+}
+function navega(dir){
+  if(CAL_VISTA==="semana"){CAL_LUNES=new Date(CAL_LUNES.getFullYear(),CAL_LUNES.getMonth(),CAL_LUNES.getDate()+dir*7)}
+  else{CAL_MES=new Date(CAL_MES.getFullYear(),CAL_MES.getMonth()+dir,1)}
+  renderCalendario();
+}
+$("cal-prev").addEventListener("click",function(){navega(-1)});
+$("cal-next").addEventListener("click",function(){navega(1)});
+
 /* ============ ESTADÍSTICAS ============ */
 function seriePeso(){
   var m={};
@@ -1553,7 +1716,7 @@ $("btn-print").addEventListener("click",function(){window.print()});
 $("btn-reset").addEventListener("click",function(){if(!confirm("¿Desmarcar la lista de la compra?"))return;
   checked={};LS.set("pf4_compra","{}");renderBasket()});
 
-function renderAll(){limpiaCache();renderPlan();curSes=0;renderEntreno();curTipo=0;renderComida();renderBasket();renderHoy();renderDatos();
+function renderAll(){limpiaCache();renderPlan();renderCalendario();curSes=0;renderEntreno();curTipo=0;renderComida();renderBasket();renderHoy();renderDatos();
   $("hd-kicker").textContent=bloque().wk+" · Semana "+(P.sem+1)}
 renderAll();renderHist();autoImport();
 if(!P.onboard){
