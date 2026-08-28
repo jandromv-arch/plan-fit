@@ -1065,8 +1065,17 @@ function norm(x){return (x||"").toString().toUpperCase()
   .replace(/[ÁÀÄÂ]/g,"A").replace(/[ÉÈËÊ]/g,"E").replace(/[ÍÌÏÎ]/g,"I")
   .replace(/[ÓÒÖÔ]/g,"O").replace(/[ÚÙÜÛ]/g,"U").replace(/Ñ/g,"N")
   .replace(/[^A-Z0-9]/g,"")}
-var IDX_PATRON={};
-Object.keys(PATRONES).forEach(function(g){PATRONES[g].forEach(function(a){IDX_PATRON[norm(a[0])]=g})});
+var IDX_PATRON={},IDX_EQ={};
+Object.keys(PATRONES).forEach(function(g){PATRONES[g].forEach(function(a){
+  IDX_PATRON[norm(a[0])]=g;IDX_EQ[norm(a[0])]=a[1]})});
+/* Máquinas de carga con discos (no llevan placas): prensa, remo en T, hack… */
+var CON_DISCOS=["PRENSA","REMO EN T","REMO EN PUNTA (REMO EN T)","SENTADILLA HACK","GEMELOS EN MÁQUINA / PRENSA"];
+var IDX_DISCOS={};CON_DISCOS.forEach(function(n){IDX_DISCOS[norm(n)]=1});
+function equipoDe(n){return IDX_EQ[norm(n)]||null}
+/* ¿tiene sentido calcular discos? solo barra libre y máquinas de discos */
+function usaDiscos(n){return equipoDe(n)==="B"||!!IDX_DISCOS[norm(n)]}
+/* ¿tiene sentido calentar con aproximaciones? cualquier cosa con carga externa */
+function usaCarga(n){var e=equipoDe(n);return e!==null&&e!=="C"}
 function patronDe(n){return IDX_PATRON[norm(n)]||null}
 function alternativas(nombre){
   var g=patronDe(nombre);
@@ -1128,7 +1137,10 @@ function renderEntreno(){
         '<input id="lg-'+ei+'-'+s+'-rir" type="number" inputmode="numeric" value="'+((pv.rir!=null&&pv.rir!=="")?pv.rir:"")+'" placeholder="'+(e[3]==null?"—":e[3])+'">'+
         '<button type="button" class="rst" data-s="'+s+'" title="Empezar descanso">⏱</button></div>';}
     html+='<div class="ex"><div class="exh"><div class="nm">'+nom+' <button type="button" class="sw" data-e="'+ei+'" title="Cambiar ejercicio" style="background:none;border:0;color:var(--iron);font-size:14px;cursor:pointer;padding:0 2px">⇄</button></div>'+(cambiado?'<div style="font:500 11px var(--sans);color:var(--faint);margin-top:1px">en vez de '+e[0]+'</div>':'')+' <div class="tg"><span class="b">'+e[1]+' × '+e[2]+'</span>'+(e[3]!=null?'<span class="b">RIR '+e[3]+'</span>':'')+'<span class="last">'+lt+'</span></div></div>'+rows+
-  '<div class="exf"><button type="button" class="wu" data-e="'+ei+'" style="background:none;border:1px solid var(--line);color:var(--muted);font:600 11.5px var(--sans);padding:7px 10px;border-radius:9px;cursor:pointer;margin-right:6px">🔥 Calentamiento</button>'+'<button type="button" class="dsc" data-e="'+ei+'" style="background:none;border:1px solid var(--line);color:var(--muted);font:600 11.5px var(--sans);padding:7px 10px;border-radius:9px;cursor:pointer;margin-right:6px">🏋️ Discos</button>'+'<button type="button" class="cp" data-e="'+ei+'" style="background:none;border:1px solid var(--line);color:var(--muted);font:600 11.5px var(--sans);padding:7px 10px;border-radius:9px;cursor:pointer">= Copiar 1ª serie al resto</button></div></div>';
+  '<div class="exf">'+
+  (usaCarga(nom)?'<button type="button" class="wu" data-e="'+ei+'" style="background:none;border:1px solid var(--line);color:var(--muted);font:600 11.5px var(--sans);padding:7px 10px;border-radius:9px;cursor:pointer;margin-right:6px">🔥 Calentamiento</button>':'')+
+  (usaDiscos(nom)?'<button type="button" class="dsc" data-e="'+ei+'" style="background:none;border:1px solid var(--line);color:var(--muted);font:600 11.5px var(--sans);padding:7px 10px;border-radius:9px;cursor:pointer;margin-right:6px">🏋️ Discos</button>':'')+
+  '<button type="button" class="cp" data-e="'+ei+'" style="background:none;border:1px solid var(--line);color:var(--muted);font:600 11.5px var(--sans);padding:7px 10px;border-radius:9px;cursor:pointer">= Copiar 1ª serie al resto</button></div></div>';
   });
   $("entreno-body").innerHTML=html;
   Array.prototype.forEach.call($("entreno-body").querySelectorAll("button[data-step]"),function(b){
@@ -1216,7 +1228,7 @@ function abreDiscos(ei){
   var h='<p class="lead">Qué poner en <b>cada lado</b> de la barra. Cambia el peso o la barra si usas otra.</p>'+
     '<div class="grid2">'+
     '<div class="field"><label>Peso total (kg)</label><input id="dc-w" type="number" inputmode="decimal" value="'+(W||60)+'"></div>'+
-    '<div class="field"><label>Barra (kg)</label><input id="dc-b" type="number" inputmode="decimal" value="20"></div>'+
+    '<div class="field"><label>'+(IDX_DISCOS[norm(nom)]?"Peso del carro (kg)":"Barra (kg)")+'</label><input id="dc-b" type="number" inputmode="decimal" value="'+(IDX_DISCOS[norm(nom)]?0:20)+'"></div>'+
     '</div><div id="dc-out"></div>';
   $("p-body").innerHTML=h;
   function calcula(){
