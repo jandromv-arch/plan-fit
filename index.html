@@ -252,6 +252,7 @@
     <p class="eyebrow">Compra semanal</p>
     <p class="lead" id="compra-lead"></p>
     <div id="adj-box"></div>
+    <div class="field" style="margin-bottom:10px"><input id="shop-q" type="search" placeholder="Buscar producto…"></div>
     <div class="chips" id="tanda-chips" role="group" aria-label="Tanda de compra"></div>
     <div class="chips" id="view-chips" role="group" aria-label="Vista"></div>
     <div class="progress"><div class="bar"><i id="bar"></i></div><span class="pct" id="pct">0%</span></div>
@@ -279,6 +280,10 @@
     <p class="eyebrow">Estadísticas</p>
     <h2 class="sec">Peso y tendencia</h2>
     <div class="card"><div class="pad" id="d-peso"></div></div>
+    <h2 class="sec">Progresión por ejercicio</h2>
+    <div class="field"><label>Ejercicio</label><select id="d-ejsel"></select></div>
+    <div class="card"><div class="pad" id="d-ejgraf"></div></div>
+
     <h2 class="sec">Adherencia</h2>
     <div class="card"><div class="pad" id="d-adh"></div></div>
     <h2 class="sec">Volumen por grupo muscular</h2>
@@ -428,6 +433,10 @@
   </div>
   <div class="grid2">
     <div class="field"><label>Personas (compra)</label><select id="f-personas"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+    <div class="field"><label>Semana 4 de cada bloque</label><select id="f-deload">
+      <option value="1" selected>Descarga (recomendado)</option>
+      <option value="0">Sin descarga</option>
+    </select></div>
     <div class="field"><label>Compras por semana</label><select id="f-compras">
       <option value="1" selected>1 · una compra grande</option>
       <option value="2">2 · reparto en dos días</option>
@@ -903,12 +912,18 @@ function sesionesDe(b){
   _sesCache[k]=res;return res;
 }
 function sesionesActuales(){return sesionesDe(P.bloque)}
+function esDescarga(sem){return P.deload!==false && sem===3}
+/* en descarga: una serie menos y un RIR más (menos cerca del fallo) */
+function ajustaEj(e,sem){
+  if(!esDescarga(sem))return e;
+  return [e[0],Math.max(2,e[1]-1),e[2],(e[3]==null?null:e[3]+1)];
+}
 /* compatibilidad: BLOQUES sigue existiendo con nombre y semanas */
 var BLOQUES=POOL.map(function(x){return{n:x.n,wk:x.wk}});
 var NOTAS=["Los pesos siempre son en crudo","Sal del Himalaya o marina en todas las comidas","Evitar el azúcar; si acaso, edulcorantes","Beber 3 litros de agua diarios","Una comida libre a la semana","Salsas 0% (ketchup, BBQ…)","Bebidas 0% (2-3 al día máximo)","Verdura libre (las que quieras, máx 400g · ¡no aguacate!)","Ensalada completa (tomate, cebolla, lechuga…)","Patata cocida, al horno o airfryer","AOVE lo justo y necesario","En ayunas: 500ml de agua + 2g de sal marina o rosa + 1 limón exprimido","Aprovechar los descansos entre series para sumar pasos"];
 
 /* ============ ESTADO ============ */
-var P={peso:75,alt:175,edad:30,sexo:"h",act:1.55,obj:"cut",bloque:0,sem:0,tdays:[0,2,4],personas:1,superm:"mercadona",ajustar:false,onboard:false,excl:{},noQuiero:[],pesoObj:null,descanso:75,compras:1,corte:4};
+var P={peso:75,alt:175,edad:30,sexo:"h",act:1.55,obj:"cut",bloque:0,sem:0,tdays:[0,2,4],personas:1,superm:"mercadona",ajustar:false,onboard:false,excl:{},noQuiero:[],pesoObj:null,descanso:75,compras:1,corte:4,ciclo:1,deload:true};
 (function(){var r=LS.get("pf4_profile");if(r){try{P=Object.assign(P,JSON.parse(r))}catch(e){}}})();
 var OPTS={}; (function(){var r=LS.get("pf4_opts");if(r){try{OPTS=JSON.parse(r)}catch(e){OPTS={}}}})();
 var SUBS={};(function(){var r=LS.get("pf5_subs");if(r){try{SUBS=JSON.parse(r)}catch(e){SUBS={}}}})();
@@ -1001,14 +1016,14 @@ function renderTdayChips(){
     });
     c.appendChild(b)})}
 function fillP(){$("f-peso").value=P.peso;$("f-alt").value=P.alt;$("f-edad").value=P.edad;$("f-sexo").value=P.sexo;
-  $("f-bloque").value=String(P.bloque);$("f-sem").value=String(P.sem);renderTdayChips();$("f-personas").value=String(P.personas);$("f-super").value=P.superm||"mercadona";$("f-act").value=String(P.act);$("f-obj").value=P.obj;$("f-pobj").value=P.pesoObj||"";$("f-desc").value=P.descanso||75;$("f-compras").value=String(P.compras||1)}
+  $("f-bloque").value=String(P.bloque);$("f-sem").value=String(P.sem);renderTdayChips();$("f-personas").value=String(P.personas);$("f-super").value=P.superm||"mercadona";$("f-act").value=String(P.act);$("f-obj").value=P.obj;$("f-pobj").value=P.pesoObj||"";$("f-desc").value=P.descanso||75;$("f-compras").value=String(P.compras||1);$("f-deload").value=P.deload===false?"0":"1"}
 $("open-profile").addEventListener("click",function(){fillP();$("modal").classList.add("on")});
 $("close-profile").addEventListener("click",function(){$("modal").classList.remove("on")});
 $("modal").addEventListener("click",function(e){if(e.target===$("modal"))$("modal").classList.remove("on")});
 $("save-profile").addEventListener("click",function(){
   P.peso=parseFloat($("f-peso").value)||0;P.alt=parseFloat($("f-alt").value)||0;P.edad=parseFloat($("f-edad").value)||0;
   P.sexo=$("f-sexo").value;P.bloque=parseInt($("f-bloque").value,10);P.sem=parseInt($("f-sem").value,10);
-  P.personas=parseInt($("f-personas").value,10)||1;P.superm=$("f-super").value;limpiaCache();P.act=parseFloat($("f-act").value);P.obj=$("f-obj").value;P.pesoObj=parseFloat($("f-pobj").value)||null;P.descanso=parseInt($("f-desc").value,10)||75;P.compras=parseInt($("f-compras").value,10)||1;P.onboard=true;saveP();limpiaCache();
+  P.personas=parseInt($("f-personas").value,10)||1;P.superm=$("f-super").value;limpiaCache();P.act=parseFloat($("f-act").value);P.obj=$("f-obj").value;P.pesoObj=parseFloat($("f-pobj").value)||null;P.descanso=parseInt($("f-desc").value,10)||75;P.compras=parseInt($("f-compras").value,10)||1;P.deload=$("f-deload").value==="1";P.onboard=true;saveP();limpiaCache();
   $("modal").classList.remove("on");renderAll()});
 
 /* ============ PLAN ============ */
@@ -1094,13 +1109,13 @@ function lastLog(n){var a=LOGS[n];return a&&a.length?a[a.length-1]:null}
 function renderEntreno(){
   var b=bloque();
   $("entreno-eyebrow").textContent=b.n+" · "+b.wk+" · Semana "+(P.sem+1)+" · "+nDias()+" días";
-  $("entreno-lead").textContent="Descanso 75\" entre series. RIR = repeticiones que te dejas en recámara. Busca progresión de una semana a la siguiente.";
+  $("entreno-lead").innerHTML=(esDescarga(P.sem)?'<b style="color:var(--sky)">Semana de descarga:</b> una serie menos y un RIR más en todo. Sirve para que el cuerpo asimile las tres semanas anteriores; no es perder el tiempo. ':'')+"Descanso "+(P.descanso||75)+"\" entre series. RIR = repeticiones que te dejas en recámara.";
   var c=$("entreno-days");c.innerHTML="";
   sesionesActuales().forEach(function(s,i){var btn=document.createElement("button");btn.className="chip";btn.textContent=s.n;
     btn.setAttribute("aria-pressed",i===curSes);btn.addEventListener("click",function(){curSes=i;renderEntreno()});c.appendChild(btn)});
   var ses=sesionesActuales()[curSes],html='<p class="lead" style="margin:-4px 0 12px">'+ses.sub+'</p>';
-  ses.ex.forEach(function(e,ei){
-    var nom=nombreEj(e[0],ei),cambiado=(nom!==e[0]);
+  ses.ex.forEach(function(e0,ei){
+    var e=ajustaEj(e0,P.sem),nom=nombreEj(e[0],ei),cambiado=(nom!==e[0]);
     var lg=lastLog(nom),lt="Sin registro previo";
     if(lg){var bs=bestSet(lg.sets);if(bs.set)lt="Última ("+lg.date+"): "+bs.set.w+" kg × "+bs.set.r+" · e1RM ~"+Math.round(bs.e1rm)}
     var rows='<div class="setrow hdr"><span>Serie</span><span>Peso kg</span><span>Reps</span><span>RIR</span></div>';
@@ -1113,7 +1128,7 @@ function renderEntreno(){
         '<input id="lg-'+ei+'-'+s+'-rir" type="number" inputmode="numeric" value="'+((pv.rir!=null&&pv.rir!=="")?pv.rir:"")+'" placeholder="'+(e[3]==null?"—":e[3])+'">'+
         '<button type="button" class="rst" data-s="'+s+'" title="Empezar descanso">⏱</button></div>';}
     html+='<div class="ex"><div class="exh"><div class="nm">'+nom+' <button type="button" class="sw" data-e="'+ei+'" title="Cambiar ejercicio" style="background:none;border:0;color:var(--iron);font-size:14px;cursor:pointer;padding:0 2px">⇄</button></div>'+(cambiado?'<div style="font:500 11px var(--sans);color:var(--faint);margin-top:1px">en vez de '+e[0]+'</div>':'')+' <div class="tg"><span class="b">'+e[1]+' × '+e[2]+'</span>'+(e[3]!=null?'<span class="b">RIR '+e[3]+'</span>':'')+'<span class="last">'+lt+'</span></div></div>'+rows+
-  '<div class="exf"><button type="button" class="cp" data-e="'+ei+'" style="background:none;border:1px solid var(--line);color:var(--muted);font:600 11.5px var(--sans);padding:7px 10px;border-radius:9px;cursor:pointer">= Copiar 1ª serie al resto</button></div></div>';
+  '<div class="exf"><button type="button" class="wu" data-e="'+ei+'" style="background:none;border:1px solid var(--line);color:var(--muted);font:600 11.5px var(--sans);padding:7px 10px;border-radius:9px;cursor:pointer;margin-right:6px">🔥 Calentamiento</button>'+'<button type="button" class="dsc" data-e="'+ei+'" style="background:none;border:1px solid var(--line);color:var(--muted);font:600 11.5px var(--sans);padding:7px 10px;border-radius:9px;cursor:pointer;margin-right:6px">🏋️ Discos</button>'+'<button type="button" class="cp" data-e="'+ei+'" style="background:none;border:1px solid var(--line);color:var(--muted);font:600 11.5px var(--sans);padding:7px 10px;border-radius:9px;cursor:pointer">= Copiar 1ª serie al resto</button></div></div>';
   });
   $("entreno-body").innerHTML=html;
   Array.prototype.forEach.call($("entreno-body").querySelectorAll("button[data-step]"),function(b){
@@ -1122,6 +1137,10 @@ function renderEntreno(){
       el.value=Math.max(0,Math.round((v+d)*10)/10)})});
   Array.prototype.forEach.call($("entreno-body").querySelectorAll("button.rst"),function(b){
     b.addEventListener("click",function(){arrancaTimer()})});
+  Array.prototype.forEach.call($("entreno-body").querySelectorAll("button.wu"),function(b){
+    b.addEventListener("click",function(){abreCalentamiento(parseInt(b.getAttribute("data-e"),10))})});
+  Array.prototype.forEach.call($("entreno-body").querySelectorAll("button.dsc"),function(b){
+    b.addEventListener("click",function(){abreDiscos(parseInt(b.getAttribute("data-e"),10))})});
   Array.prototype.forEach.call($("entreno-body").querySelectorAll("button.sw"),function(b){
     b.addEventListener("click",function(){abreCambio(parseInt(b.getAttribute("data-e"),10))})});
   Array.prototype.forEach.call($("entreno-body").querySelectorAll("button.cp"),function(b){
@@ -1169,6 +1188,51 @@ function renderPRs(){
   $("prs").innerHTML=rows.map(function(x){return x.h}).join("");
 }
 
+function pesoObjetivoSerie(ei){
+  var v=parseFloat(($("lg-"+ei+"-0-w")||{}).value);
+  if(v>0)return v;
+  var nom=nombreEj(sesionesActuales()[curSes].ex[ei][0],ei),lg=lastLog(nom);
+  if(lg){var b=bestSet(lg.sets);if(b.set)return b.set.w}
+  return 0;
+}
+function abreCalentamiento(ei){
+  var nom=nombreEj(sesionesActuales()[curSes].ex[ei][0],ei),W=pesoObjetivoSerie(ei);
+  $("p-title").innerHTML="🔥 Calentamiento · "+nom;
+  if(!W){$("p-body").innerHTML='<p class="lead">Escribe primero el peso de tu primera serie (o guarda una sesión) y te calculo las series de aproximación.</p>';$("pmodal").classList.add("on");return}
+  var pasos=[[0.4,8],[0.6,5],[0.8,3]];
+  var h='<p class="lead">Antes de tus series efectivas de <b>'+W+' kg</b>. Descansos cortos, 30-45 s. No lleves ninguna cerca del fallo: esto es preparar, no entrenar.</p>';
+  pasos.forEach(function(x,i){
+    var pw=Math.max(0,Math.round(W*x[0]/2.5)*2.5);
+    h+='<div class="pr"><span class="nm">Aproximación '+(i+1)+'</span><span class="v">'+pw+' kg × '+x[1]+'</span></div>';
+  });
+  h+='<div class="pr"><span class="nm">Serie efectiva 1</span><span class="v" style="color:var(--fresh)">'+W+' kg</span></div>';
+  h+='<p class="lead" style="margin-top:12px;font-size:12.5px">En básicos pesados añade una serie más al 90%. En accesorios con una aproximación suele bastar.</p>';
+  $("p-body").innerHTML=h;$("pmodal").classList.add("on");
+}
+var DISCOS=[25,20,15,10,5,2.5,1.25];
+function abreDiscos(ei){
+  var nom=nombreEj(sesionesActuales()[curSes].ex[ei][0],ei),W=pesoObjetivoSerie(ei);
+  $("p-title").innerHTML="🏋️ Discos · "+nom;
+  var h='<p class="lead">Qué poner en <b>cada lado</b> de la barra. Cambia el peso o la barra si usas otra.</p>'+
+    '<div class="grid2">'+
+    '<div class="field"><label>Peso total (kg)</label><input id="dc-w" type="number" inputmode="decimal" value="'+(W||60)+'"></div>'+
+    '<div class="field"><label>Barra (kg)</label><input id="dc-b" type="number" inputmode="decimal" value="20"></div>'+
+    '</div><div id="dc-out"></div>';
+  $("p-body").innerHTML=h;
+  function calcula(){
+    var tot=parseFloat($("dc-w").value)||0,barra=parseFloat($("dc-b").value)||0;
+    var lado=(tot-barra)/2;
+    if(lado<0){$("dc-out").innerHTML='<div class="insight">El peso total no llega ni al peso de la barra.</div>';return}
+    var resto=lado,usa=[];
+    DISCOS.forEach(function(d){var n=Math.floor((resto+1e-9)/d);if(n>0){usa.push(n+" × "+d);resto=Math.round((resto-n*d)*100)/100}});
+    var h2='<div class="pr"><span class="nm">Por lado</span><span class="v">'+lado.toFixed(2).replace(/\.00$/,"")+' kg</span></div>'+
+      '<div class="insight" style="margin-top:10px"><b>'+(usa.length?usa.join("  +  "):"nada, solo la barra")+'</b>'+
+      (resto>0.01?'<br><span style="color:var(--muted)">Sobran '+resto+' kg: con los discos típicos no llegas exacto. Redondea a '+(tot-resto*2)+' o '+(tot-resto*2+2.5)+' kg.</span>':'')+'</div>';
+    $("dc-out").innerHTML=h2;
+  }
+  $("dc-w").addEventListener("input",calcula);$("dc-b").addEventListener("input",calcula);
+  calcula();$("pmodal").classList.add("on");
+}
 function abreCambio(ei){
   var base=sesionesActuales()[curSes].ex[ei][0],actual=nombreEj(base,ei);
   var lista=alternativas(actual);
@@ -1298,6 +1362,10 @@ function fmtQ(u,q){
   if(u==="ml"){var n=Math.ceil(q/100)*100;return n>=1000?(n/1000).toString().replace(".",",")+" L":n+" ml"}
   var n=Math.ceil(q/50)*50;return n>=1000?(n/1000).toFixed(1).replace(".0","").replace(".",",")+" kg":n+" g";
 }
+function pasaFiltro(x){
+  if(!BUSCA)return true;
+  return (x[0]||"").toLowerCase().indexOf(BUSCA)>-1;
+}
 function renderBasket(){
   var b=P.bloque,f=P.personas||1,tot={};
   var cr=consumoReal(),fac=1;
@@ -1320,7 +1388,7 @@ function renderBasket(){
   order.forEach(function(s){var it=sec[s];if(!it)return;
     it.sort(function(a,b){return a[0]<b[0]?-1:1});
     var g=document.createElement("div");g.className="grp";g.innerHTML='<h4>'+s+'</h4>';
-    it.forEach(function(x){total++;g.appendChild(itemRow(s,x))});
+    it.forEach(function(x){if(!pasaFiltro(x))return;total++;g.appendChild(itemRow(s,x))});
     el.appendChild(g)});
   var extra=document.createElement("div");extra.className="grp";
   extra.innerHTML='<h4>Básicos</h4><p class="lead" style="margin:0;font-size:13px">Sal marina o del Himalaya · limones (agua en ayunas) · especias · agua mineral. Duran varias semanas.</p>';
@@ -1344,7 +1412,9 @@ function renderBasket(){
   }
   updateBar();
 }
-var ULTIMA_CESTA={},VISTA="junto",TANDA="todo";
+var ULTIMA_CESTA={},VISTA="junto",TANDA="todo",BUSCA="";
+var DESPENSA={};(function(){var r=LS.get("pf5_despensa");if(r){try{DESPENSA=JSON.parse(r)}catch(e){DESPENSA={}}}})();
+function saveDespensa(){LS.set("pf5_despensa",JSON.stringify(DESPENSA))}
 function diasDeTanda(){
   var c=P.corte==null?4:P.corte;
   if((P.compras||1)<2||TANDA==="todo")return [0,1,2,3,4,5,6];
@@ -1353,13 +1423,14 @@ function diasDeTanda(){
   return TANDA==="1"?a:b;
 }
 function itemRow(sec,x){
-  var id=sec+"|"+x[0],k=x[2],qty=x[3];
+  var id=sec+"|"+x[0],k=x[2],qty=x[3],enCasa=!!DESPENSA[k];
   var l=document.createElement("label");l.className="item";
   var cb=document.createElement("input");cb.type="checkbox";cb.checked=!!checked[id];
   cb.addEventListener("change",function(){checked[id]=cb.checked;LS.set("pf4_compra",JSON.stringify(checked));updateBar()});
   var nm=document.createElement("span");nm.className="nm";
   var best=mejorSuper(k),cost=best?costeDe(k,qty,best):null;
-  nm.innerHTML=iconOf(k)+" "+x[0]+(cost!=null?'<br><span style="font-size:11.5px;color:var(--fresh)">'+cost.toFixed(2)+' € · '+(SUPERS[best]||{n:best}).n+'</span>':'');
+  if(enCasa)l.style.opacity=".45";
+  nm.innerHTML=iconOf(k)+" "+x[0]+(enCasa?' <span style="font:600 9.5px var(--mono);color:var(--sky)">YA LO TENGO</span>':'')+(cost!=null?'<br><span style="font-size:11.5px;color:var(--fresh)">'+cost.toFixed(2)+' € · '+(SUPERS[best]||{n:best}).n+'</span>':'');
   var q=document.createElement("span");q.className="qty";q.textContent=x[1];
   var b=document.createElement("button");b.type="button";b.textContent="ⓘ";
   b.style.cssText="background:none;border:0;color:var(--muted);font-size:17px;cursor:pointer;padding:0 2px";
@@ -1434,6 +1505,7 @@ function abreProducto(k,qty){
     '<div class="pr"><span class="nm">Energía ('+per+')</span><span class="v">'+kc+' kcal'+(mio?' <span style="color:var(--fresh)">✎</span>':'')+'</span></div>'+
     '<div class="pr"><span class="nm">Proteína / carbos / grasa</span><span class="v">'+mm[0]+' / '+mm[1]+' / '+mm[2]+' g</span></div>';
   if(usos.length)h+='<p class="lead" style="margin:14px 0 6px"><b style="color:var(--fresh)">Lo usas en:</b> '+usos.join(" · ")+'</p>';
+  h+='<button class="btn full" id="dsp-tg" style="margin-top:6px">'+(DESPENSA[k]?"↩︎ Quitar de la despensa (volver a comprarlo)":"🏠 Ya lo tengo en casa (no comprarlo)")+'</button>';
   h+='<details style="margin-top:16px"><summary style="color:var(--iron)">✎ Corregir valores nutricionales</summary><div class="dbody">'+
     '<p style="margin:0 0 10px">Copia lo que diga <b>tu envase</b> ('+per+').'+
       (fresco
@@ -1457,6 +1529,10 @@ function abreProducto(k,qty){
   h+='<button class="btn primary full" id="pz-save">Guardar precios</button>'+
      '<a class="btn full" style="margin-top:10px;text-decoration:none" href="'+superU(d[6])+'" target="_blank" rel="noopener">Ver en '+(SUPERS[P.superm]||SUPERS.mercadona).n+' ↗</a>';
   $("p-body").innerHTML=h;
+  $("dsp-tg").addEventListener("click",function(){
+    if(DESPENSA[k])delete DESPENSA[k];else DESPENSA[k]=1;
+    saveDespensa();$("pmodal").classList.remove("on");renderBasket();
+  });
   $("nv-save").addEventListener("click",function(){
     var kc2=parseFloat(($("nv-kcal").value||"").replace(",",".")),
         pp=parseFloat(($("nv-p").value||"").replace(",",".")),
@@ -1626,14 +1702,31 @@ $("c-save").addEventListener("click",function(){
     peso:parseFloat($("c-peso").value)||null,train:parseInt($("c-train").value,10)||null,fat:parseInt($("c-fat").value,10),
     sleep:parseFloat($("c-sleep").value)||null,adh:parseInt($("c-adh").value,10)||null,perf:$("c-perf").value,notes:$("c-notes").value.trim()};
   var tips=advise(e);HIST.push(e);LS.set("pf4_hist",JSON.stringify(HIST));
+  // el peso real manda: si ha cambiado, recalcula el plan entero
+  if(e.peso&&Math.abs(e.peso-P.peso)>=0.3){
+    var antes=P.peso,kAntes=kcalObjetivo();
+    P.peso=e.peso;saveP();limpiaCache();
+    var kDespues=kcalObjetivo(),dif=kDespues-kAntes;
+    tips.unshift("<b>Peso actualizado de "+antes+" a "+e.peso+" kg.</b> Tu objetivo pasa de "+kAntes+" a <b>"+kDespues+" kcal</b> ("+(dif>=0?"+":"")+dif+") y la proteína a "+Math.round(P.peso*protPorKg())+" g. Las raciones ya están recalculadas."+
+      (dif<0?" Es normal: al pesar menos, gastas menos.":""));
+  }
+  // objetivo alcanzado
+  if(P.pesoObj&&P.obj==="cut"&&e.peso&&e.peso<=P.pesoObj){
+    tips.unshift("<b>Has llegado a tu objetivo de "+P.pesoObj+" kg.</b> Plantéate pasar a mantenimiento en ⚙️: aguantar en déficit sin final a la vista desgasta y frena el rendimiento.");
+  }
   $("c-advice").innerHTML='<div class="advice"><b>Lectura de la semana</b><ul>'+tips.map(function(t){return '<li>'+t+'</li>'}).join("")+'</ul></div>';
   ["c-peso","c-train","c-sleep","c-adh","c-notes"].forEach(function(i){$(i).value=""});
-  P.sem++;if(P.sem>3){P.sem=0;P.bloque=Math.min(P.bloque+1,2)}saveP();fillP();renderAll();renderHist();
+  P.sem++;
+  if(P.sem>3){P.sem=0;P.bloque++;
+    if(P.bloque>2){P.bloque=0;P.ciclo=(P.ciclo||1)+1;
+      setTimeout(function(){alert("¡Ciclo de 12 semanas completado!\n\nEmpiezas el ciclo "+P.ciclo+" desde el bloque 1, recalculado con tu peso actual. Si llevas mucho tiempo en déficit, plantéate unas semanas de mantenimiento antes de seguir.")},400);
+    }}
+  saveP();fillP();renderAll();renderHist();
   $("c-advice").scrollIntoView({behavior:"smooth",block:"center"})});
 
 /* ============ COPIA DE SEGURIDAD ============ */
 function backupObj(){return{v:4,fecha:new Date().toISOString(),
-  profile:P,opts:OPTS,logs:LOGS,hist:HIST,imports:IMPORTS,daily:DAILY,compra:checked,prices:PRICES,subs:SUBS,optwd:OPTWD,foodovr:FOODOVR}}
+  profile:P,opts:OPTS,logs:LOGS,hist:HIST,imports:IMPORTS,daily:DAILY,compra:checked,prices:PRICES,subs:SUBS,optwd:OPTWD,foodovr:FOODOVR,despensa:DESPENSA}}
 function backupStr(){return JSON.stringify(backupObj())}
 $("bk-copy").addEventListener("click",function(){
   var t=backupStr();
@@ -1670,6 +1763,7 @@ $("bk-restore").addEventListener("click",function(){
   if(d.subs){SUBS=d.subs;saveSubs()}
   if(d.optwd){OPTWD=d.optwd;LS.set("pf5_optwd",JSON.stringify(OPTWD))}
   if(d.foodovr){FOODOVR=d.foodovr;saveOvr()}
+  if(d.despensa){DESPENSA=d.despensa;saveDespensa()}
   $("bk-in").value="";fillP();renderAll();renderHist();
   $("bk-out").innerHTML='<div class="insight" style="margin-top:10px"><b>Restaurado.</b> Datos de la copia del '+((d.fecha||"").slice(0,10)||"?")+'.</div>';
 });
@@ -1679,13 +1773,13 @@ function lunesDe(d){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
   var w=(x.getDay()+6)%7;x.setDate(x.getDate()-w);return x}
 function inicioPlan(){
   // el lunes de esta semana menos las semanas ya transcurridas del plan
-  var l=lunesDe(new Date());l.setDate(l.getDate()-(P.bloque*4+P.sem)*7);return l;
+  var l=lunesDe(new Date());l.setDate(l.getDate()-(((P.ciclo||1)-1)*12+P.bloque*4+P.sem)*7);return l;
 }
 function situacion(fecha){
   var w=Math.round((lunesDe(fecha)-inicioPlan())/604800000);
   if(w<0)return{fuera:"antes"};
-  if(w>11)return{fuera:"despues",w:w};
-  return{w:w,bloque:Math.floor(w/4),sem:w%4};
+  var wc=w%12;
+  return{w:w,ciclo:Math.floor(w/12)+1,bloque:Math.floor(wc/4),sem:wc%4};
 }
 var CAL_MES=new Date(),CAL_SEL=null,CAL_VISTA="mes",CAL_LUNES=lunesDe(new Date());
 function renderCalVista(){
@@ -1778,7 +1872,7 @@ function renderDetalleDia(){
     '<div class="lead" style="margin:4px 0 12px">Bloque '+(inf.bloque+1)+' · '+BLOQUES[inf.bloque].wk.toLowerCase()+' · semana '+(inf.sem+1)+' de 4'+(esOtro?' <b style="color:var(--plum)">(otro bloque)</b>':'')+'</div>';
   if(inf.si>-1){
     h+='<div class="note" style="margin-bottom:12px"><b>🏋️ '+inf.ses.n+'</b> · '+inf.ses.sub+'<br>'+
-      inf.ses.ex.map(function(e){return e[0].toLowerCase()+" ("+e[1]+"×"+e[2]+")"}).join(" · ")+'</div>';
+      inf.ses.ex.map(function(e0){var e=ajustaEj(e0,inf.sem);return e[0].toLowerCase()+" ("+e[1]+"×"+e[2]+")"}).join(" · ")+'</div>';
   } else h+='<div class="note s" style="margin-bottom:12px"><b>🚶 Sin gimnasio.</b> Objetivo de pasos: '+pasosObjetivo().toLocaleString("es-ES")+'.</div>';
   h+='<div style="font:600 10px var(--mono);text-transform:uppercase;color:var(--faint);margin-bottom:6px">Día '+inf.tipo.n+' · '+inf.kcal+' kcal</div>';
   inf.dg.comidas.forEach(function(m,mi){
@@ -1869,6 +1963,30 @@ function sparkline(datos,mm){
     '<text x="'+pad+'" y="'+(H-8)+'" fill="#98A2AE" font-size="12" font-family="monospace">'+mn.toFixed(1)+' kg</text>'+
     '</svg>';
 }
+function renderEjGraf(){
+  var ns=Object.keys(LOGS).filter(function(n){return LOGS[n].length>=1});
+  var sel=$("d-ejsel");
+  if(!ns.length){sel.innerHTML="";$("d-ejgraf").innerHTML='<p class="lead" style="margin:0">Guarda alguna sesión y aquí verás cómo evoluciona cada ejercicio.</p>';return}
+  ns.sort(function(a,b){return LOGS[b].length-LOGS[a].length});
+  var prev=sel.value;
+  sel.innerHTML=ns.map(function(n){return '<option value="'+n.replace(/"/g,"&quot;")+'">'+n+'</option>'}).join("");
+  if(prev&&ns.indexOf(prev)>-1)sel.value=prev;
+  var n=sel.value||ns[0],arr=LOGS[n];
+  var datos=arr.map(function(e){return{d:e.date,w:bestSet(e.sets).e1rm}});
+  if(datos.length<2){
+    var b=bestSet(arr[0].sets);
+    $("d-ejgraf").innerHTML='<p class="lead" style="margin:0">Solo hay un registro de <b>'+n+'</b> ('+(b.set?b.set.w+" kg × "+b.set.r:"")+'). Con dos o más verás la curva.</p>';
+    return;
+  }
+  var svg=sparkline(datos,datos.map(function(x){return x.w}));
+  var prim=datos[0].w,ult=datos[datos.length-1].w,dif=ult-prim;
+  var maxW=0,maxR=0;arr.forEach(function(e){e.sets.forEach(function(st){if(st.w>maxW){maxW=st.w;maxR=st.r}})});
+  $("d-ejgraf").innerHTML=svg+
+    '<div class="pr"><span class="nm">e1RM estimado ahora</span><span class="v">'+Math.round(ult)+' kg</span></div>'+
+    '<div class="pr"><span class="nm">Desde el primer registro</span><span class="d '+(dif>0.5?"up":dif<-0.5?"dn":"")+'" style="font:700 13px var(--mono)">'+(dif>=0?"+":"")+dif.toFixed(1)+' kg</span></div>'+
+    '<div class="pr"><span class="nm">Peso máximo movido</span><span class="v">'+maxW+' kg × '+maxR+'</span></div>'+
+    '<div class="pr"><span class="nm">Sesiones registradas</span><span class="v">'+arr.length+'</span></div>';
+}
 function renderDatos(){
   // --- peso
   var sp=seriePeso();
@@ -1897,6 +2015,7 @@ function renderDatos(){
     h+='<p class="lead" style="margin:10px 0 0;font-size:12px">La línea punteada es el peso diario; la verde, la media de 7 días. Fíjate solo en la verde: el diario sube y baja por sal, agua y glucógeno.</p>';
     $("d-peso").innerHTML=h;
   }
+  renderEjGraf();
   // --- adherencia
   var prev=0,com=0,dTrain=0,kcalSum=0,kcalDias=0;
   for(var i=0;i<28;i++){
@@ -1944,6 +2063,7 @@ function bajaCSV(nombre,texto){
     a.href=u;a.download=nombre;document.body.appendChild(a);a.click();document.body.removeChild(a);
     setTimeout(function(){URL.revokeObjectURL(u)},1000);}catch(e){alert("No pude descargar el CSV.")}
 }
+$("d-ejsel").addEventListener("change",renderEjGraf);
 $("csv-dias").addEventListener("click",function(){
   var l=["fecha,tipo_dia,kcal_comidas,kcal_gastadas,pasos,agua_vasos,peso"];
   Object.keys(DAILY).sort().forEach(function(k){var r=DAILY[k];
@@ -1962,6 +2082,7 @@ $("csv-series").addEventListener("click",function(){
 $("btn-share").addEventListener("click",function(){var t="Plan Fit — app gratuita que genera tu plan de entreno y dieta de 12 semanas a partir de tu peso, sexo y objetivo.";
   if(navigator.share)navigator.share({title:"Plan Fit",text:t,url:location.href}).catch(function(){});
   else alert("Comparte la URL de esta app.")});
+$("shop-q").addEventListener("input",function(){BUSCA=($("shop-q").value||"").trim().toLowerCase();renderBasket()});
 $("btn-print").addEventListener("click",function(){window.print()});
 $("btn-reset").addEventListener("click",function(){if(!confirm("¿Desmarcar la lista de la compra?"))return;
   checked={};LS.set("pf4_compra","{}");renderBasket()});

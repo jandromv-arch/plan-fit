@@ -1,5 +1,5 @@
-const CACHE = 'planfit-v15';
-const ASSETS = ['./', './index.html', './manifest.json'];
+const CACHE = 'planfit-v16';
+const ASSETS = ['./', './index.html', './manifest.json', './icon-192-v2.png', './icon-512-v2.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
@@ -12,27 +12,29 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Red primero, cache como respaldo: si hay internet ves la última versión;
-// si no, la app sigue funcionando en el gimnasio.
+// Cache primero: abre al instante aunque el gimnasio no tenga cobertura,
+// y actualiza por detrás para que la próxima vez veas la versión nueva.
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request)
-      .then(r => {
-        const copy = r.clone();
-        caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+    caches.match(e.request).then(cached => {
+      const red = fetch(e.request).then(r => {
+        if (r && r.status === 200) {
+          const copy = r.clone();
+          caches.open(CACHE).then(c => c.put(e.request, copy)).catch(() => {});
+        }
         return r;
-      })
-      .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+      }).catch(() => cached || caches.match('./index.html'));
+      return cached || red;
+    })
   );
 });
 
-// Preparado para notificaciones push (necesita servidor que las envíe)
 self.addEventListener('push', e => {
   let d = { title: 'Plan Fit', body: 'Toca para abrir tu plan de hoy.' };
   try { if (e.data) d = Object.assign(d, e.data.json()); } catch (err) {}
   e.waitUntil(self.registration.showNotification(d.title, {
-    body: d.body, icon: './icon-192.png', badge: './icon-192.png', data: { url: './index.html' }
+    body: d.body, icon: './icon-192-v2.png', badge: './icon-192-v2.png', data: { url: './index.html' }
   }));
 });
 
