@@ -612,12 +612,18 @@ var PLANTILLAS={
    pasos:["Cuece {pasta} al dente.","Calienta {tomatetrit} con ajo y {aove}, añade {atun} escurrido.","Mezcla con la pasta y orégano."]},
   {n:"Pollo y patata al airfryer",m:"Airfryer",slots:[{k:"pollo",role:"prot"},{k:"patata",role:"carb"},{k:"verdura",fixed:200},{k:"aove",role:"fat"}],
    pasos:["Airfryer a 190°. {patata} en bastones con {aove}, 8 min.","Añade {pollo} en tiras especiado y 10 min más, agitando a mitad.","{verdura} al vapor o en los últimos 5 min."]},
-  {n:"Lentejas con arroz y verduras",m:"Olla",slots:[{k:"lentejas",role:"prot"},{k:"arroz",role:"carb"},{k:"verdura",fixed:200},{k:"aove",role:"fat"}],
-   pasos:["Sofríe {verdura} con ajo y {aove}.","Añade {lentejas} escurridas y un poco de caldo, 10 min.","Sirve con {arroz} cocido."]},
+  {n:"Lentejas con arroz y tofu",m:"Olla",slots:[{k:"lentejas",fixed:200},{k:"tofu",role:"prot"},{k:"arroz",role:"carb"},{k:"verdura",fixed:200},{k:"aove",role:"fat"}],
+   pasos:["Cuece {arroz}.","Dora {tofu} en dados con {aove} y sofríe {verdura}.","Añade {lentejas} escurridas y un poco de caldo, 8 min.","Sirve con el arroz."]},
+  {n:"Garbanzos con pollo y quinoa",m:"Olla",slots:[{k:"garbanzos",fixed:200},{k:"pollo",role:"prot"},{k:"quinoa",role:"carb"},{k:"verdura",fixed:150},{k:"aove",role:"fat"}],
+   pasos:["Enjuaga {quinoa} y cuécela 15 min con el doble de agua.","Saltea {pollo} en tiras con {verdura} y {aove}.","Añade {garbanzos} escurridos, 5 min.","Mezcla con la quinoa."]},
+  {n:"Quinoa con pavo y verduras",m:"Olla",slots:[{k:"pavo",role:"prot"},{k:"quinoa",role:"carb"},{k:"verdura",fixed:200},{k:"aove",role:"fat"}],
+   pasos:["Cuece {quinoa} 15 min.","Saltea {pavo} en tiras con {aove} y especias.","Añade {verdura} 4 min y mezcla."]},
+  {n:"Arroz con atún y verduras",m:"Olla",slots:[{k:"atun",role:"prot"},{k:"arroz",role:"carb"},{k:"verdura",fixed:200},{k:"aove",role:"fat"}],
+   pasos:["Cuece {arroz}.","Saltea {verdura} con {aove} y ajo.","Añade {atun} escurrido al final y mezcla."]},
   {n:"Salmón con quinoa",m:"Horno",slots:[{k:"salmon",role:"prot"},{k:"quinoa",role:"carb"},{k:"verdura",fixed:200},{k:"aove",role:"fat"}],
    pasos:["Enjuaga {quinoa} y cuécela 15 min con el doble de agua.","{salmon} al horno 190°, 12-14 min con limón.","Saltea {verdura} con {aove}."]},
-  {n:"Garbanzos con verdura y huevo",m:"Olla",slots:[{k:"garbanzos",role:"prot"},{k:"huevo",fixed:2},{k:"patata",role:"carb"},{k:"aove",role:"fat"},{k:"verdura",fixed:150}],
-   pasos:["Cuece {patata} en cubos y {huevo} 9 min.","Saltea {verdura} con {aove} y añade {garbanzos} escurridos.","Mezcla y corona con el huevo partido."]},
+  {n:"Garbanzos con huevo y patata",m:"Olla",slots:[{k:"garbanzos",fixed:200},{k:"huevo",fixed:2},{k:"requeson",role:"prot"},{k:"patata",role:"carb"},{k:"aove",role:"fat"},{k:"verdura",fixed:150}],
+   pasos:["Cuece {patata} en cubos y {huevo} 9 min.","Saltea {verdura} con {aove} y añade {garbanzos} escurridos.","Mezcla, corona con el huevo partido y {requeson} aparte."]},
   {n:"Ternera con boniato al airfryer",m:"Airfryer",slots:[{k:"ternera",role:"prot"},{k:"boniato",role:"carb"},{k:"ensalada",fixed:150},{k:"aove",role:"fat"}],
    pasos:["Airfryer 190°: {boniato} en dados con {aove}, 12 min.","{ternera} a la plancha 2-3 min por lado.","Acompaña con {ensalada}."]}
  ],
@@ -636,6 +642,12 @@ var PLANTILLAS={
    pasos:["Cuece {arroz}.","Dora {tofu} en dados con {aove} hasta que quede crujiente.","Añade {verdura} y salsa de soja; mezcla con el arroz."]},
   {n:"Pavo a la plancha con patata",m:"Sartén",slots:[{k:"pavo",role:"prot"},{k:"patata",role:"carb"},{k:"verdura",fixed:200},{k:"aove",role:"fat"}],
    pasos:["Cuece o microondas {patata} 6 min.","{pavo} a la plancha con {aove}, 3 min por lado.","Saltea {verdura} en la misma sartén."]},
+  {n:"Ensalada de garbanzos y atún",m:"Sin cocinar",slots:[{k:"garbanzos",fixed:200},{k:"atun",role:"prot"},{k:"rebanada",role:"carb"},{k:"ensalada",fixed:200},{k:"aove",role:"fat"}],
+   pasos:["Escurre {garbanzos} y {atun}.","Pica {ensalada} y mézclalo todo con {aove} y limón.","Acompaña con {rebanada} tostada."]},
+  {n:"Bowl de quinoa y pollo",m:"Olla",slots:[{k:"pollo",role:"prot"},{k:"quinoa",role:"carb"},{k:"verdura",fixed:200},{k:"aguacate",role:"fat"}],
+   pasos:["Cuece {quinoa} 15 min.","Haz {pollo} a la plancha y trocéalo.","Monta el bowl con {verdura} y {aguacate} en láminas."]},
+  {n:"Lentejas con verduras y huevo",m:"Olla",slots:[{k:"lentejas",fixed:200},{k:"huevo",fixed:2},{k:"tofu",role:"prot"},{k:"arroz",role:"carb"},{k:"aove",role:"fat"}],
+   pasos:["Cuece {arroz} y {huevo} 9 min.","Sofríe {tofu} en dados con {aove}.","Añade {lentejas} con un poco de caldo, 8 min.","Sirve con el arroz y el huevo partido."]},
   {n:"Tortilla de patata",m:"Sartén",slots:[{k:"huevo",fixed:2},{k:"claras",role:"prot"},{k:"patata",role:"carb"},{k:"aove",role:"fat"}],
    pasos:["Corta {patata} fina y hazla en {aove} a fuego suave, 12 min.","Bate {huevo} con {claras}, mezcla y cuaja 3 min por lado.","Reposa 5 min antes de cortar."]}
  ],
@@ -672,11 +684,20 @@ var BLOQUES_DIETA=[
    {k:"libre",n:"Libre",dias:"Día 6",w:.60,carb:"medio",libre:2}],
   map:[0,1,1,2,0,3,1]}
 ];
-var MAXQ={claras:600,yogur:600,pollo:300,pavo:300,ternera:250,cerdo:250,merluza:350,salmon:250,
- requeson:350,jamon:150,atun:3,huevo:4,tofu:350,lentejas:400,garbanzos:400,quinoa:180,patata:500,boniato:450,arroz:180,pasta:150,avena:150,
- rebanada:12,tortaarroz:14,tacomaiz:8,fajita:6,fruta:4,frutosrojos:300,
- aguacate:100,aove:30,almendras:60,cacahuete:50,queso:80,verdura:400,ensalada:250};
+var MAXQ={claras:400,yogur:400,pollo:280,pavo:280,ternera:230,cerdo:230,merluza:300,salmon:250,
+ requeson:250,jamon:120,atun:3,huevo:4,tofu:300,lentejas:250,garbanzos:250,
+ patata:400,boniato:400,arroz:150,pasta:130,avena:120,quinoa:140,
+ rebanada:8,tortaarroz:8,tacomaiz:6,fajita:4,fruta:3,frutosrojos:250,
+ aguacate:80,aove:25,almendras:45,cacahuete:40,queso:60,verdura:400,ensalada:250,masapizza:250};
 function tope(k){return MAXQ[k]!=null?MAXQ[k]:300}
+/* Cantidad mínima para que el plato tenga sentido: 20 g de pasta no es un plato.
+   Si el día no da para llegar a esto, la receta no se ofrece ese día. */
+var MINQ={pasta:70,arroz:70,quinoa:60,avena:40,patata:120,boniato:120,masapizza:120,
+ rebanada:2,tortaarroz:2,tacomaiz:2,fajita:2,fruta:1,
+ pollo:110,pavo:110,ternera:90,cerdo:90,merluza:110,salmon:90,tofu:100,atun:1,huevo:1,
+ lentejas:150,garbanzos:150,requeson:100,yogur:150,claras:60,jamon:40,
+ aove:5,aguacate:15,almendras:10,cacahuete:10,queso:15};
+function piso(k){return MINQ[k]!=null?MINQ[k]:0}
 var FAT_KG={muybajo:1.05,bajo:.95,medio:.85,alto:.55};
 function mealSplit(){return kcalObjetivo()>2800?[.25,.27,.23,.25]:[.30,.30,.40]}
 
@@ -729,7 +750,10 @@ function construyeComida(tpl,tg){
     iP=ing.length;ing.push([sp.k,q]);restC-=f[2]*q;restG-=f[3]*q}
   if(sf){var f2=val(sf.k),q2=Math.min(tope(sf.k),redondea(f2[4],Math.max(0,restG)/f2[3]));
     iF=ing.length;ing.push([sf.k,q2]);restC-=f2[2]*q2}
-  if(sc){var f3=val(sc.k),q3=Math.min(tope(sc.k),redondea(f3[4],Math.max(0,restC)/f3[2]));
+  var forzado=false;
+  if(sc){var f3=val(sc.k),ideal=redondea(f3[4],Math.max(0,restC)/f3[2]);
+    var q3=Math.min(tope(sc.k),ideal);
+    if(q3<piso(sc.k)){q3=piso(sc.k);forzado=true}   // el día no da para este plato
     iC=ing.length;ing.push([sc.k,q3])}
   // --- ajuste fino: si sobran kcal baja la grasa; si faltan, sube el carbohidrato
   var objK=tg.P*4+tg.C*4+tg.G*9;
@@ -738,7 +762,7 @@ function construyeComida(tpl,tg){
     var f=val(ing[idx][0]),paso=redondea(f[4],Math.abs(dif)/f[0]);
     if(paso<=0)return false;
     var nv=ing[idx][1]+(dif>0?paso:-paso);
-    nv=Math.max(0,Math.min(tope(ing[idx][0]),nv));
+    nv=Math.max(piso(ing[idx][0]),Math.min(tope(ing[idx][0]),nv));
     if(nv===ing[idx][1])return false;
     ing[idx][1]=nv;return true;
   }
@@ -748,7 +772,21 @@ function construyeComida(tpl,tg){
     var ok=(dif>0)?(mueve(iC,dif)||mueve(iF,dif)):(mueve(iF,dif)||mueve(iC,dif));
     if(!ok)break;
   }
-  return ing.filter(function(p){return p[1]>0});
+  ing=ing.filter(function(p){return p[1]>0});
+  // ordena como está escrita la receta, que se lee mucho mejor
+  var orden={};tpl.slots.forEach(function(sl,i){orden[sl.k]=i});
+  ing.sort(function(a,b){return (orden[a[0]]==null?99:orden[a[0]])-(orden[b[0]]==null?99:orden[b[0]])});
+  return ing;
+}
+/* ¿la receta sale con cantidades razonables o queda ridícula? */
+function recetaSensata(tpl,ing){
+  var malas=0;
+  tpl.slots.forEach(function(sl){
+    if(!sl.role)return;                    // los fijos no se juzgan
+    var q=0;ing.forEach(function(p){if(p[0]===sl.k)q=p[1]});
+    if(q<piso(sl.k))malas++;
+  });
+  return malas===0;
 }
 var SING={huevo:"huevo",rebanada:"rebanada de pan integral",tortaarroz:"torta de arroz",
  tacomaiz:"tortilla de maíz",fajita:"fajita",fruta:"pieza de fruta",atun:"lata de atún",pudding:"pudding proteico"};
@@ -779,8 +817,12 @@ function generaDia(bi,ti){
     var tg={P:md.P*factor,C:md.C*factor,G:md.G*factor};
     var lista=PLANTILLAS[keys[i]].filter(plantillaValida);
     if(!lista.length)lista=PLANTILLAS[keys[i]].slice(0,1);
-    var ops=lista.map(function(tpl){
-      var ing=construyeComida(tpl,tg);
+    // construye todas y quédate con las que salen en cantidades razonables
+    var cand=lista.map(function(tpl){var ing=construyeComida(tpl,tg);return{tpl:tpl,ing:ing,ok:recetaSensata(tpl,ing)}});
+    var buenas=cand.filter(function(c){return c.ok});
+    if(!buenas.length)buenas=cand.slice(0,1);   // nunca dejar una comida vacía
+    var ops=buenas.map(function(c){
+      var tpl=c.tpl,ing=c.ing;
       var mm=macroOf(ing);
       return{n:tpl.n,m:tpl.m,t:textoComida(ing),i:ing,k:kcalOf(ing),mac:mm,
              pasos:(tpl.pasos||[]).map(function(x){return rellenaPaso(x,ing)})};
