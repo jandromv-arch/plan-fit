@@ -717,28 +717,53 @@ function piso(k){return MINQ[k]!=null?MINQ[k]:0}
    cambia dónde caen. Comer los carbohidratos el día que entrenas es lo lógico:
    los usas para rendir y para reponer glucógeno. */
 var RANK_CARB={alto:3,medio:2,bajo:1,muybajo:0};
+function durezaSesion(nombre){
+  // pierna/peso muerto = lo más demandante -> mejor candidato a día de carga
+  var n=(nombre||"").toLowerCase();
+  if(/pierna|pier/.test(n))return 3;
+  if(/torso|empuj|pecho|espalda|traccion/.test(n))return 2;
+  if(/hombro|brazo/.test(n))return 1;
+  return 2;
+}
 function mapaDia(bi){
   var B=BLOQUES_DIETA[bi],base=B.map;
   if(P.alinear===false)return base;
   var cargaIdx=-1,libreIdx=-1;
   B.tipos.forEach(function(t,i){if(t.k==="carga")cargaIdx=i;if(t.libre!=null)libreIdx=i});
   var cuenta={};base.forEach(function(ti){cuenta[ti]=(cuenta[ti]||0)+1});
+  var td=trainDays(),sl=sesionesDe(bi);
+  // En pérdida de grasa la evidencia recomienda 1-2 días de carga/semana (los más
+  // intensos). Si el plan trae más, el exceso se convierte al tipo intermedio del bloque.
+  if(P.obj==="cut"&&cargaIdx>-1&&(cuenta[cargaIdx]||0)>0){
+    var maxCarga=Math.min(2,Math.max(1,Math.round(td.length/2)));
+    if(td.length<=2)maxCarga=1;
+    var exceso=(cuenta[cargaIdx]||0)-maxCarga;
+    if(exceso>0){
+      // tipo destino: el de más carbo que NO sea carga ni libre (descarga/normal)
+      var dest=-1,mejor=-1;
+      B.tipos.forEach(function(t,i){if(i===cargaIdx||i===libreIdx)return;
+        var r=RANK_CARB[t.carb];if(r>mejor){mejor=r;dest=i}});
+      if(dest>-1){cuenta[cargaIdx]-=exceso;cuenta[dest]=(cuenta[dest]||0)+exceso}
+    }
+  }
   var res=[null,null,null,null,null,null,null];
-  // el día libre se queda donde estaba (suele ser fin de semana)
   if(libreIdx>-1)base.forEach(function(ti,d){if(ti===libreIdx)res[d]=libreIdx});
-  var td=trainDays();
-  // la carga va a los días de entreno
-  var n=cuenta[cargaIdx]||0;
-  td.forEach(function(d){if(n>0&&res[d]===null){res[d]=cargaIdx;n--}});
-  for(var d=0;d<7&&n>0;d++){if(res[d]===null){res[d]=cargaIdx;n--}}
-  // el resto: lo de más carbohidrato a los días de entreno que queden
+  // ordena los días de entreno por dureza (pierna primero)
+  var entrenoOrden=td.map(function(d,i){return{d:d,dur:durezaSesion((sl[i%sl.length]||{}).n)}})
+    .sort(function(a,b){return b.dur-a.dur});
+  // la CARGA solo a los días más duros (los que el plan tenga: en cut suele ser 1)
+  var nC=cuenta[cargaIdx]||0;
+  entrenoOrden.forEach(function(o){if(nC>0&&res[o.d]===null){res[o.d]=cargaIdx;nC--}});
+  for(var d=0;d<7&&nC>0;d++){if(res[d]===null){res[d]=cargaIdx;nC--}}
+  // el resto de tipos, de más a menos carbo, a los días de entreno que queden y luego a descanso
   var resto=[];
-  Object.keys(cuenta).forEach(function(ti){ti=+ti;
-    if(ti===cargaIdx||ti===libreIdx)return;
+  Object.keys(cuenta).forEach(function(ti){ti=+ti;if(ti===cargaIdx||ti===libreIdx)return;
     for(var i=0;i<cuenta[ti];i++)resto.push(ti)});
   resto.sort(function(a,b){return RANK_CARB[B.tipos[b].carb]-RANK_CARB[B.tipos[a].carb]});
-  td.forEach(function(d){if(res[d]===null&&resto.length)res[d]=resto.shift()});
-  for(var d2=0;d2<7;d2++){if(res[d2]===null)res[d2]=resto.length?resto.pop():0}
+  // primero completa los días de entreno restantes con lo de más carbo
+  entrenoOrden.forEach(function(o){if(res[o.d]===null&&resto.length)res[o.d]=resto.shift()});
+  // y los días de descanso reciben lo que queda (lo de menos carbo tiende a caer aquí)
+  for(var d2=0;d2<7;d2++){if(res[d2]===null)res[d2]=resto.length?resto.pop():(cargaIdx>-1?0:0)}
   return res;
 }
 var FAT_KG={muybajo:1.05,bajo:.95,medio:.85,alto:.55};
