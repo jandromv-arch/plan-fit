@@ -441,6 +441,10 @@
   </div>
   <div class="grid2">
     <div class="field"><label>Personas (compra)</label><select id="f-personas"><option value="1" selected>1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option></select></div>
+    <div class="field"><label>Días de carga</label><select id="f-alinear">
+      <option value="1" selected>Cuando entreno (recomendado)</option>
+      <option value="0">Fijos según el plan original</option>
+    </select></div>
     <div class="field"><label>Semana 4 de cada bloque</label><select id="f-deload">
       <option value="1" selected>Descarga (recomendado)</option>
       <option value="0">Sin descarga</option>
@@ -708,6 +712,35 @@ var MINQ={pasta:70,arroz:70,quinoa:60,avena:40,patata:120,boniato:120,masapizza:
  lentejas:150,garbanzos:150,requeson:100,yogur:150,claras:60,jamon:40,
  aove:5,aguacate:15,almendras:10,cacahuete:10,queso:15};
 function piso(k){return MINQ[k]!=null?MINQ[k]:0}
+/* Coloca los tipos de día del bloque de forma que la CARGA caiga en los días
+   que entrenas. Se respeta cuántos días de cada tipo tiene el bloque; solo
+   cambia dónde caen. Comer los carbohidratos el día que entrenas es lo lógico:
+   los usas para rendir y para reponer glucógeno. */
+var RANK_CARB={alto:3,medio:2,bajo:1,muybajo:0};
+function mapaDia(bi){
+  var B=BLOQUES_DIETA[bi],base=B.map;
+  if(P.alinear===false)return base;
+  var cargaIdx=-1,libreIdx=-1;
+  B.tipos.forEach(function(t,i){if(t.k==="carga")cargaIdx=i;if(t.libre!=null)libreIdx=i});
+  var cuenta={};base.forEach(function(ti){cuenta[ti]=(cuenta[ti]||0)+1});
+  var res=[null,null,null,null,null,null,null];
+  // el día libre se queda donde estaba (suele ser fin de semana)
+  if(libreIdx>-1)base.forEach(function(ti,d){if(ti===libreIdx)res[d]=libreIdx});
+  var td=trainDays();
+  // la carga va a los días de entreno
+  var n=cuenta[cargaIdx]||0;
+  td.forEach(function(d){if(n>0&&res[d]===null){res[d]=cargaIdx;n--}});
+  for(var d=0;d<7&&n>0;d++){if(res[d]===null){res[d]=cargaIdx;n--}}
+  // el resto: lo de más carbohidrato a los días de entreno que queden
+  var resto=[];
+  Object.keys(cuenta).forEach(function(ti){ti=+ti;
+    if(ti===cargaIdx||ti===libreIdx)return;
+    for(var i=0;i<cuenta[ti];i++)resto.push(ti)});
+  resto.sort(function(a,b){return RANK_CARB[B.tipos[b].carb]-RANK_CARB[B.tipos[a].carb]});
+  td.forEach(function(d){if(res[d]===null&&resto.length)res[d]=resto.shift()});
+  for(var d2=0;d2<7;d2++){if(res[d2]===null)res[d2]=resto.length?resto.pop():0}
+  return res;
+}
 var FAT_KG={muybajo:1.05,bajo:.95,medio:.85,alto:.55};
 /* El reparto depende de las kcal DE ESE DÍA: un día de carga no cabe en 3 comidas */
 function mealSplit(kcalDia){
@@ -732,7 +765,7 @@ function kcalPorTipo(bi){
   var B=BLOQUES_DIETA[bi],target=kcalObjetivo(),semana=target*7;
   var hayLibre=B.tipos.some(function(t){return t.libre!=null});
   if(hayLibre)semana-=700; // reserva para la comida libre
-  var suma=0;B.map.forEach(function(ti){suma+=B.tipos[ti].w});
+  var suma=0;mapaDia(bi).forEach(function(ti){suma+=B.tipos[ti].w});
   var k=semana/suma;
   // un solo día no debe pedir cantidades imposibles de comer ni bajar demasiado
   return B.tipos.map(function(t){
@@ -1006,7 +1039,7 @@ var BLOQUES=POOL.map(function(x){return{n:x.n,wk:x.wk}});
 var NOTAS=["Los pesos siempre son en crudo","Sal del Himalaya o marina en todas las comidas","Evitar el azúcar; si acaso, edulcorantes","Beber 3 litros de agua diarios","Una comida libre a la semana","Salsas 0% (ketchup, BBQ…)","Bebidas 0% (2-3 al día máximo)","Verdura libre (las que quieras, máx 400g · ¡no aguacate!)","Ensalada completa (tomate, cebolla, lechuga…)","Patata cocida, al horno o airfryer","AOVE lo justo y necesario","En ayunas: 500ml de agua + 2g de sal marina o rosa + 1 limón exprimido","Aprovechar los descansos entre series para sumar pasos"];
 
 /* ============ ESTADO ============ */
-var P={peso:75,alt:175,edad:30,sexo:"h",act:1.55,obj:"cut",bloque:0,sem:0,tdays:[0,2,4],personas:1,superm:"mercadona",ajustar:false,onboard:false,excl:{},noQuiero:[],pesoObj:null,descanso:75,compras:1,corte:4,ciclo:1,deload:true,batidos:1,creatina:true};
+var P={peso:75,alt:175,edad:30,sexo:"h",act:1.55,obj:"cut",bloque:0,sem:0,tdays:[0,2,4],personas:1,superm:"mercadona",ajustar:false,onboard:false,excl:{},noQuiero:[],pesoObj:null,descanso:75,compras:1,corte:4,ciclo:1,deload:true,batidos:1,creatina:true,alinear:true};
 (function(){var r=LS.get("pf4_profile");if(r){try{P=Object.assign(P,JSON.parse(r))}catch(e){}}})();
 var OPTS={}; (function(){var r=LS.get("pf4_opts");if(r){try{OPTS=JSON.parse(r)}catch(e){OPTS={}}}})();
 var SUBS={};(function(){var r=LS.get("pf5_subs");if(r){try{SUBS=JSON.parse(r)}catch(e){SUBS={}}}})();
@@ -1055,7 +1088,7 @@ var _cache={};
 function limpiaCache(){_cache={};_sesCache={}}
 function diaGen(bi,ti){var k=[bi,ti,P.peso,P.alt,P.edad,P.sexo,P.act,P.obj,JSON.stringify(P.excl||{}),(P.noQuiero||[]).join(","),P.superm,JSON.stringify(FOODOVR),P.batidos,P.creatina].join("_");
   if(!_cache[k])_cache[k]=generaDia(bi,ti);return _cache[k]}
-function tipoIdx(wd){return BLOQUES_DIETA[P.bloque].map[wd]}
+function tipoIdx(wd){return mapaDia(P.bloque)[wd]}
 function diaDeSemana(wd){return diaGen(P.bloque,tipoIdx(wd))}
 function tiposBloque(){return BLOQUES_DIETA[P.bloque].tipos}
 function trainDays(){
@@ -1099,14 +1132,14 @@ function renderTdayChips(){
     });
     c.appendChild(b)})}
 function fillP(){$("f-peso").value=P.peso;$("f-alt").value=P.alt;$("f-edad").value=P.edad;$("f-sexo").value=P.sexo;
-  $("f-bloque").value=String(P.bloque);$("f-sem").value=String(P.sem);renderTdayChips();$("f-personas").value=String(P.personas);$("f-super").value=P.superm||"mercadona";$("f-act").value=String(P.act);$("f-obj").value=P.obj;$("f-pobj").value=P.pesoObj||"";$("f-desc").value=P.descanso||75;$("f-compras").value=String(P.compras||1);$("f-deload").value=P.deload===false?"0":"1";$("f-batidos").value=String(P.batidos||0);$("f-crea").value=P.creatina===false?"0":"1"}
+  $("f-bloque").value=String(P.bloque);$("f-sem").value=String(P.sem);renderTdayChips();$("f-personas").value=String(P.personas);$("f-super").value=P.superm||"mercadona";$("f-act").value=String(P.act);$("f-obj").value=P.obj;$("f-pobj").value=P.pesoObj||"";$("f-desc").value=P.descanso||75;$("f-compras").value=String(P.compras||1);$("f-deload").value=P.deload===false?"0":"1";$("f-alinear").value=P.alinear===false?"0":"1";$("f-batidos").value=String(P.batidos||0);$("f-crea").value=P.creatina===false?"0":"1"}
 $("open-profile").addEventListener("click",function(){fillP();$("modal").classList.add("on")});
 $("close-profile").addEventListener("click",function(){$("modal").classList.remove("on")});
 $("modal").addEventListener("click",function(e){if(e.target===$("modal"))$("modal").classList.remove("on")});
 $("save-profile").addEventListener("click",function(){
   P.peso=parseFloat($("f-peso").value)||0;P.alt=parseFloat($("f-alt").value)||0;P.edad=parseFloat($("f-edad").value)||0;
   P.sexo=$("f-sexo").value;P.bloque=parseInt($("f-bloque").value,10);P.sem=parseInt($("f-sem").value,10);
-  P.personas=parseInt($("f-personas").value,10)||1;P.superm=$("f-super").value;limpiaCache();P.act=parseFloat($("f-act").value);P.obj=$("f-obj").value;P.pesoObj=parseFloat($("f-pobj").value)||null;P.descanso=parseInt($("f-desc").value,10)||75;P.compras=parseInt($("f-compras").value,10)||1;P.deload=$("f-deload").value==="1";P.batidos=parseInt($("f-batidos").value,10)||0;P.creatina=$("f-crea").value==="1";P.onboard=true;saveP();limpiaCache();
+  P.personas=parseInt($("f-personas").value,10)||1;P.superm=$("f-super").value;limpiaCache();P.act=parseFloat($("f-act").value);P.obj=$("f-obj").value;P.pesoObj=parseFloat($("f-pobj").value)||null;P.descanso=parseInt($("f-desc").value,10)||75;P.compras=parseInt($("f-compras").value,10)||1;P.deload=$("f-deload").value==="1";P.alinear=$("f-alinear").value==="1";P.batidos=parseInt($("f-batidos").value,10)||0;P.creatina=$("f-crea").value==="1";P.onboard=true;saveP();limpiaCache();
   $("modal").classList.remove("on");renderAll()});
 
 /* ============ PLAN ============ */
@@ -1894,7 +1927,7 @@ function renderCalVista(){
 function infoDia(f){
   var wd=(f.getDay()+6)%7,st=situacion(f);
   if(st.fuera)return{fuera:st.fuera,wd:wd};
-  var b=st.bloque,ti=BLOQUES_DIETA[b].map[wd],dg=diaGen(b,ti);
+  var b=st.bloque,ti=mapaDia(b)[wd],dg=diaGen(b,ti);
   var sl=sesionesDe(b),td=trainDays(),si=td.indexOf(wd)>-1?td.indexOf(wd)%sl.length:-1;
   return{wd:wd,bloque:b,sem:st.sem,ti:ti,dg:dg,tipo:dg.tipo,si:si,ses:si>-1?sl[si]:null,kcal:kcalDiaDe(b,ti)};
 }
