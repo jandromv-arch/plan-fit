@@ -1076,6 +1076,26 @@ var HIST=[]; (function(){var r=LS.get("pf4_hist");if(r){try{HIST=JSON.parse(r)}c
 var IMPORTS=[]; (function(){var r=LS.get("pf4_imports");if(r){try{IMPORTS=JSON.parse(r)}catch(e){IMPORTS=[]}}})();
 var DAILY={}; (function(){var r=LS.get("pf4_daily");if(r){try{DAILY=JSON.parse(r)}catch(e){DAILY={}}}})();
 function saveP(){LS.set("pf4_profile",JSON.stringify(P))}
+/* copia de emergencia: guarda un respaldo cada vez que cambia algo importante,
+   por si el navegador borra los datos. Se restaura solo si todo lo demás está vacío. */
+function autoBackup(){try{LS.set("pf5_autobackup",JSON.stringify({t:Date.now(),d:backupObj()}))}catch(e){}}
+function chequeaRescate(){
+  // si no hay perfil guardado pero sí una copia de emergencia, ofrécela
+  if(LS.get("pf4_logs")||LS.get("pf4_hist"))return;
+  var r=LS.get("pf5_autobackup");if(!r)return;
+  try{var o=JSON.parse(r);if(!o.d)return;
+    var f=new Date(o.t).toLocaleString("es-ES");
+    if(confirm("Parece que se han perdido tus datos.\n\nHay una copia de emergencia del "+f+". ¿La restauro?")){
+      var d=o.d;
+      if(d.profile)P=Object.assign(P,d.profile);saveP();
+      ["opts","logs","hist","imports","daily","compra","optwd","foodovr","despensa"].forEach(function(kk){
+        var mp={opts:"pf4_opts",logs:"pf4_logs",hist:"pf4_hist",imports:"pf4_imports",daily:"pf4_daily",compra:"pf4_compra",optwd:"pf5_optwd",foodovr:"pf5_foodovr",despensa:"pf5_despensa"};
+        if(d[kk])LS.set(mp[kk],JSON.stringify(d[kk]));
+      });
+      location.reload();
+    }
+  }catch(e){}
+}
 function optKey(b,tk,mi){return b+"|"+tk+"|"+mi}
 function getOpt(b,tk,mi){var v=OPTS[optKey(b,tk,mi)];return v===undefined?0:v}
 function setOpt(b,tk,mi,v){OPTS[optKey(b,tk,mi)]=v;LS.set("pf4_opts",JSON.stringify(OPTS))}
@@ -1217,6 +1237,8 @@ function equipoDe(n){return IDX_EQ[norm(n)]||null}
 function usaDiscos(n){return equipoDe(n)==="B"||!!IDX_DISCOS[norm(n)]}
 /* ¿tiene sentido calentar con aproximaciones? cualquier cosa con carga externa */
 function usaCarga(n){var e=equipoDe(n);return e!==null&&e!=="C"}
+/* ejercicios de peso corporal: el peso lo pones como LASTRE añadido (0 = tu cuerpo) */
+function esCorporal(n){return equipoDe(n)==="C"}
 function patronDe(n){return IDX_PATRON[norm(n)]||null}
 function alternativas(nombre){
   var g=patronDe(nombre);
@@ -1224,9 +1246,10 @@ function alternativas(nombre){
   return [[nombre,"B"]];
 }
 /* ============ CRONÓMETRO DE DESCANSO ============ */
-var Tmr={id:null,left:0};
+var Tmr={id:null,fin:0};
+function restaTimer(){return Math.max(0,Math.round((Tmr.fin-Date.now())/1000))}
 function pintaTimer(){
-  var m=Math.floor(Tmr.left/60),sg=Tmr.left%60;
+  var v=restaTimer(),m=Math.floor(v/60),sg=v%60;
   $("timer-txt").textContent=m+":"+(sg<10?"0":"")+sg;
 }
 function avisa(){
@@ -1237,42 +1260,64 @@ function avisa(){
     setTimeout(function(){o.stop();a.close()},420)}}catch(e){}
 }
 function arrancaTimer(seg){
-  Tmr.left=seg||P.descanso||75;
+  Tmr.fin=Date.now()+(seg||P.descanso||75)*1000;
+  LS.set("pf5_timerfin",String(Tmr.fin));
   $("timer-bar").style.display="block";pintaTimer();
   if(Tmr.id)clearInterval(Tmr.id);
   Tmr.id=setInterval(function(){
-    Tmr.left--;
-    if(Tmr.left<=0){clearInterval(Tmr.id);Tmr.id=null;avisa();
+    if(restaTimer()<=0){clearInterval(Tmr.id);Tmr.id=null;LS.set("pf5_timerfin","0");avisa();
       $("timer-txt").textContent="¡Ya!";
-      setTimeout(function(){$("timer-bar").style.display="none"},2500);return}
+      setTimeout(function(){if(restaTimer()<=0)$("timer-bar").style.display="none"},2500);return}
     pintaTimer();
-  },1000);
+  },500);
 }
-$("timer-stop").addEventListener("click",function(){if(Tmr.id)clearInterval(Tmr.id);Tmr.id=null;$("timer-bar").style.display="none"});
-$("timer-add").addEventListener("click",function(){Tmr.left+=30;pintaTimer()});
+/* al reabrir la app o volver de segundo plano, retoma el descanso en curso */
+function retomaTimer(){
+  var f=parseInt(LS.get("pf5_timerfin")||"0",10);
+  if(f>Date.now()){Tmr.fin=f;$("timer-bar").style.display="block";pintaTimer();
+    if(!Tmr.id)Tmr.id=setInterval(function(){if(restaTimer()<=0){clearInterval(Tmr.id);Tmr.id=null;LS.set("pf5_timerfin","0");avisa();$("timer-txt").textContent="¡Ya!";setTimeout(function(){if(restaTimer()<=0)$("timer-bar").style.display="none"},2500)}else pintaTimer()},500);}
+}
+document.addEventListener("visibilitychange",function(){if(!document.hidden)retomaTimer()});
+window.addEventListener("focus",retomaTimer);
+$("timer-stop").addEventListener("click",function(){if(Tmr.id)clearInterval(Tmr.id);Tmr.id=null;LS.set("pf5_timerfin","0");$("timer-bar").style.display="none"});
+$("timer-add").addEventListener("click",function(){Tmr.fin+=30000;LS.set("pf5_timerfin",String(Tmr.fin));pintaTimer()});
 
 /* ============ ENTRENO ============ */
 var curSes=0;
-function e1rm(w,r){return(!w||!r)?0:w*(1+r/30)}
+function e1rm(w,r){if(!r)return 0;if(!w)return r;return w*(1+r/30)}
 function bestSet(s){var b=0,bs=null;s.forEach(function(x){var e=e1rm(x.w,x.r);if(e>b){b=e;bs=x}});return{e1rm:b,set:bs}}
 function lastLog(n){var a=LOGS[n];return a&&a.length?a[a.length-1]:null}
+var DRAFT={};
+function draftKey(){return P.bloque+"_"+curSes}
+function guardaDraft(){
+  var ses=sesionesActuales()[curSes];if(!ses)return;
+  var k=draftKey();DRAFT[k]=DRAFT[k]||{};
+  ses.ex.forEach(function(e0,ei){
+    var e=ajustaEj(e0,P.sem);
+    for(var sset=0;sset<e[1];sset++){
+      var w=($("lg-"+ei+"-"+sset+"-w")||{}).value,r=($("lg-"+ei+"-"+sset+"-r")||{}).value,ri=($("lg-"+ei+"-"+sset+"-rir")||{}).value;
+      if(w||r||ri)DRAFT[k][ei+"-"+sset]={w:w,r:r,rir:ri};
+    }
+  });
+}
 function renderEntreno(){
   var b=bloque();
   $("entreno-eyebrow").textContent=b.n+" · "+b.wk+" · Semana "+(P.sem+1)+" · "+nDias()+" días";
   $("entreno-lead").innerHTML=(esDescarga(P.sem)?'<b style="color:var(--sky)">Semana de descarga:</b> una serie menos y un RIR más en todo. Sirve para que el cuerpo asimile las tres semanas anteriores; no es perder el tiempo. ':'')+"Descanso "+(P.descanso||75)+"\" entre series. RIR = repeticiones que te dejas en recámara.";
   var c=$("entreno-days");c.innerHTML="";
   sesionesActuales().forEach(function(s,i){var btn=document.createElement("button");btn.className="chip";btn.textContent=s.n;
-    btn.setAttribute("aria-pressed",i===curSes);btn.addEventListener("click",function(){curSes=i;renderEntreno()});c.appendChild(btn)});
+    btn.setAttribute("aria-pressed",i===curSes);btn.addEventListener("click",function(){guardaDraft();curSes=i;renderEntreno()});c.appendChild(btn)});
   var ses=sesionesActuales()[curSes],html='<p class="lead" style="margin:-4px 0 12px">'+ses.sub+'</p>';
   ses.ex.forEach(function(e0,ei){
     var e=ajustaEj(e0,P.sem),nom=nombreEj(e[0],ei),cambiado=(nom!==e[0]);
     var lg=lastLog(nom),lt="Sin registro previo";
     if(lg){var bs=bestSet(lg.sets);if(bs.set)lt="Última ("+lg.date+"): "+bs.set.w+" kg × "+bs.set.r+" · e1RM ~"+Math.round(bs.e1rm)}
     var rows='<div class="setrow hdr"><span>Serie</span><span>Peso kg</span><span>Reps</span><span>RIR</span></div>';
-    for(var s=0;s<e[1];s++){var pv=(lg&&lg.sets[s])?lg.sets[s]:{w:"",r:"",rir:""};
+    var dk=DRAFT[draftKey()]||{},corp=esCorporal(nom);
+    for(var s=0;s<e[1];s++){var dv=dk[ei+"-"+s],pv=dv?dv:((lg&&lg.sets[s])?lg.sets[s]:{w:"",r:"",rir:""});
       rows+='<div class="setrow"><span class="sn">'+(s+1)+'</span>'+
         '<span class="stp"><button type="button" data-step="-2.5" data-for="lg-'+ei+'-'+s+'-w">−</button>'+
-        '<input id="lg-'+ei+'-'+s+'-w" type="number" inputmode="decimal" value="'+(pv.w||"")+'" placeholder="kg">'+
+        '<input id="lg-'+ei+'-'+s+'-w" type="number" inputmode="decimal" value="'+(pv.w||"")+'" placeholder="'+(corp?"lastre":"kg")+'">'+
         '<button type="button" data-step="2.5" data-for="lg-'+ei+'-'+s+'-w">+</button></span>'+
         '<input id="lg-'+ei+'-'+s+'-r" type="number" inputmode="numeric" value="'+(pv.r||"")+'" placeholder="reps">'+
         '<input id="lg-'+ei+'-'+s+'-rir" type="number" inputmode="numeric" value="'+((pv.rir!=null&&pv.rir!=="")?pv.rir:"")+'" placeholder="'+(e[3]==null?"—":e[3])+'">'+
@@ -1295,7 +1340,7 @@ function renderEntreno(){
   Array.prototype.forEach.call($("entreno-body").querySelectorAll("button.dsc"),function(b){
     b.addEventListener("click",function(){abreDiscos(parseInt(b.getAttribute("data-e"),10))})});
   Array.prototype.forEach.call($("entreno-body").querySelectorAll("button.sw"),function(b){
-    b.addEventListener("click",function(){abreCambio(parseInt(b.getAttribute("data-e"),10))})});
+    b.addEventListener("click",function(){guardaDraft();abreCambio(parseInt(b.getAttribute("data-e"),10))})});
   Array.prototype.forEach.call($("entreno-body").querySelectorAll("button.cp"),function(b){
     b.addEventListener("click",function(){var ei=b.getAttribute("data-e");
       var w=($("lg-"+ei+"-0-w")||{}).value,r=($("lg-"+ei+"-0-r")||{}).value,ri=($("lg-"+ei+"-0-rir")||{}).value;
@@ -1312,7 +1357,7 @@ $("save-session").addEventListener("click",function(){
     for(var s=0;s<e[1];s++){
       var w=parseFloat(($("lg-"+ei+"-"+s+"-w")||{}).value)||0,r=parseInt(($("lg-"+ei+"-"+s+"-r")||{}).value,10)||0;
       var re=$("lg-"+ei+"-"+s+"-rir"),rir=(re&&re.value!=="")?parseInt(re.value,10):null;
-      if(w>0&&r>0)sets.push({w:w,r:r,rir:rir});}
+      if(r>0)sets.push({w:w,r:r,rir:rir});}
     if(!sets.length)return;
     var prev=lastLog(nom),pb=prev?bestSet(prev.sets).e1rm:0,nb=bestSet(sets).e1rm,top=sets[sets.length-1];
     LOGS[nom]=LOGS[nom]||[];
@@ -1326,6 +1371,7 @@ $("save-session").addEventListener("click",function(){
     ins.push(m);
   });
   LS.set("pf4_logs",JSON.stringify(LOGS));
+  DRAFT[draftKey()]={};autoBackup();
   $("session-insight").innerHTML=n?('<div class="insight"><b>Análisis ('+n+' ejercicios)</b><ul>'+ins.map(function(t){return '<li>'+t+'</li>'}).join("")+'</ul></div>'):'<div class="insight">Rellena peso y reps de al menos una serie.</div>';
   renderPRs();renderDatos();
   if(n)arrancaTimer();
@@ -1391,6 +1437,9 @@ function abreCambio(ei){
   var lista=alternativas(actual);
   if(lista.length<2)lista=alternativas(base);
   var g=patronDe(actual)||patronDe(base);
+  // no ofrecer ejercicios que ya están en la sesión (evita duplicados)
+  var presentes={};sesionesActuales()[curSes].ex.forEach(function(x,j){if(j!==ei)presentes[norm(nombreEj(x[0],j))]=1});
+  lista=lista.filter(function(a){return !presentes[norm(a[0])]||norm(a[0])===norm(actual)});
   $("p-title").innerHTML="⇄ Cambiar ejercicio";
   var h='<p class="lead">'+(g?'<b style="color:var(--iron)">'+g+'</b><br>':'')+'Mismo patrón de movimiento y mismo músculo, con el material que tengas libre. Cada variante guarda su propio historial de pesos.</p>';
   lista.forEach(function(a,i){
@@ -1861,7 +1910,7 @@ $("c-save").addEventListener("click",function(){
   var e={date:new Date().toLocaleDateString("es-ES",{day:"2-digit",month:"short"}),bloque:P.bloque,sem:P.sem,
     peso:parseFloat($("c-peso").value)||null,train:parseInt($("c-train").value,10)||null,fat:parseInt($("c-fat").value,10),
     sleep:parseFloat($("c-sleep").value)||null,adh:parseInt($("c-adh").value,10)||null,perf:$("c-perf").value,notes:$("c-notes").value.trim()};
-  var tips=advise(e);HIST.push(e);LS.set("pf4_hist",JSON.stringify(HIST));
+  var tips=advise(e);HIST.push(e);LS.set("pf4_hist",JSON.stringify(HIST));autoBackup();
   // el peso real manda: si ha cambiado, recalcula el plan entero
   if(e.peso&&Math.abs(e.peso-P.peso)>=0.3){
     var antes=P.peso,kAntes=kcalObjetivo();
@@ -2249,7 +2298,7 @@ $("btn-reset").addEventListener("click",function(){if(!confirm("¿Desmarcar la l
 
 function renderAll(){limpiaCache();renderPlan();renderCalendario();curSes=0;renderEntreno();curTipo=0;renderComida();renderBasket();renderHoy();renderDatos();
   $("hd-kicker").textContent=bloque().wk+" · Semana "+(P.sem+1)}
-renderAll();renderHist();autoImport();
+chequeaRescate();renderAll();renderHist();autoImport();retomaTimer();
 if(!P.onboard){
   $("modal").classList.add("on");fillP();
   var h=document.querySelector("#modal .sheet h3");
