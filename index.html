@@ -1469,11 +1469,15 @@ function renderComida(){
   $("comida-eyebrow").textContent="Dieta · "+bloque().wk;
   $("comida-intro").innerHTML="<b>Generada para ti:</b> "+P.peso+" kg · "+(P.sexo==="h"?"hombre":"mujer")+" · "+P.edad+" años · objetivo "+({cut:"perder grasa",maint:"mantenimiento",bulk:"ganar músculo"}[P.obj])+". Media semanal <b>"+mediaSemanal()+" kcal/día</b>, proteína <b>"+Math.round(P.peso*protPorKg())+" g</b>. Cambia tus datos en ⚙️ y se recalcula todo. <b>Pesos en crudo.</b>"+(suelaActivo()?" <br><br><b>Aviso:</b> tu cálculo bajaba de "+sueloKcal()+" kcal, así que lo he limitado ahí. Un déficit mayor conviene supervisarlo con un profesional.":"");
   var c=$("daytype-chips");c.innerHTML="";
+  var hoyTi=tipoIdx((new Date().getDay()+6)%7);
   tiposBloque().forEach(function(t,i){var btn=document.createElement("button");btn.className="chip";
-    btn.textContent=t.n+" · "+kcalDia(i);btn.setAttribute("aria-pressed",i===curTipo);
+    btn.textContent=(i===hoyTi?"● ":"")+t.n+" · "+kcalDia(i);btn.setAttribute("aria-pressed",i===curTipo);
     btn.addEventListener("click",function(){curTipo=i;renderComida()});c.appendChild(btn)});
   var dg=diaGen(b,curTipo),tp=dg.tipo,md=dg.macros;
-  var html='<p class="lead" style="margin:-4px 0 14px">'+tp.dias+' · objetivo <b style="color:var(--ink)">'+md.kcal+' kcal</b> (P'+md.P+' C'+md.C+' G'+md.G+') · elegido <b style="color:var(--ink)">'+kcalDia(curTipo)+' kcal</b></p>';
+  var hoyTi=tipoIdx((new Date().getDay()+6)%7),esHoy=(curTipo===hoyTi);
+  var html='<div class="note '+(esHoy?"g":"")+'" style="margin:-2px 0 14px">'+
+    (esHoy?'<b>Este es el tipo de día de hoy.</b> ':'<b style="color:var(--iron)">Estás viendo los días «'+tp.n+'».</b> Hoy no es uno de ellos, así que lo que cambies aquí se aplicará a esos días, no al de hoy. ')+
+    tp.dias+' · objetivo '+md.kcal+' kcal (P'+md.P+' C'+md.C+' G'+md.G+'), elegido '+kcalDia(curTipo)+' kcal.</div>';
   ordenComidas(dg).forEach(function(par){
     var m=par.m,mi=par.mi;
     var sel=getOpt(b,tp.k,mi),isFree=m.libre,o=m.o[sel]||m.o[0];
@@ -2296,7 +2300,7 @@ $("btn-print").addEventListener("click",function(){window.print()});
 $("btn-reset").addEventListener("click",function(){if(!confirm("¿Desmarcar la lista de la compra?"))return;
   checked={};LS.set("pf4_compra","{}");renderBasket()});
 
-function renderAll(){limpiaCache();renderPlan();renderCalendario();curSes=0;renderEntreno();curTipo=0;renderComida();renderBasket();renderHoy();renderDatos();
+function renderAll(){limpiaCache();renderPlan();renderCalendario();curSes=0;renderEntreno();curTipo=tipoIdx((new Date().getDay()+6)%7);renderComida();renderBasket();renderHoy();renderDatos();
   $("hd-kicker").textContent=bloque().wk+" · Semana "+(P.sem+1)}
 chequeaRescate();renderAll();renderHist();autoImport();retomaTimer();
 if(!P.onboard){
